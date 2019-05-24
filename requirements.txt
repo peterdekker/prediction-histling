@@ -1,0 +1,14 @@
+cython
+numpy
+scipy
+matplotlib
+pandas>=0.17.0
+distance
+lingpy
+seqlearn
+bcubed
+python-igraph
+newick
+sklearn
+https://github.com/Theano/Theano/archive/master.zip
+https://github.com/Lasagne/Lasagne/archive/master.zip
