@@ -14,22 +14,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-------------------------------------------------------------------------------
-from EncoderDecoder import EncoderDecoder
-from PhylNet import PhylNet
-from SeqModel import SeqModel
+from models.EncoderDecoder import EncoderDecoder
+from models.PhylNet import PhylNet
+from models.SeqModel import SeqModel
+import models.baseline as baseline
+
+from cognatedetection import cd
+from tree import cluster
+
+from dataset import data
+from util import utility
+from visualize import visualize
+
+# External libs
 import lingpy
 import argparse
-import baseline
-import pickle
-import cd
-import cluster
-import copy
-import data
 import numpy as np
 import os
-import utility
-import visualize
-
+import copy
+import pickle
+import pandas as pd
 
 # ## Command line arguments
 # Number of units in the hidden (recurrent) layer
@@ -396,7 +400,7 @@ def main():
         # Max_len saved per language, rather than per language pair
         max_len = {}
 
-        features = [[], []]
+        features = [pd.DataFrame(), pd.DataFrame()]
         voc_size = [0, 0]
         voc_size_general = [0, 0]
         
@@ -523,14 +527,14 @@ def main():
     if FLAGS.cluster:
         # Cluster based on word prediction distances
         print("WP TREE:\n")
-        tree = cluster.cluster_languages(lang_pairs, distances_path, output_path=distances_path)
+        cluster.cluster_languages(lang_pairs, distances_path, output_path=distances_path)
     if FLAGS.baseline_cluster:
         # Source prediction baseline
         print("\nSOURCE BASELINE TREE")
-        tree = cluster.cluster_languages(lang_pairs, baselines_path, output_path=baselines_path + "_source", distance_col=2)
+        cluster.cluster_languages(lang_pairs, baselines_path, output_path=baselines_path + "_source", distance_col=2)
         # PMI-based baseline
         print("\nPMI BASELINE TREE")
-        tree = cluster.cluster_languages(lang_pairs, baselines_path, output_path=baselines_path + "_pmi", distance_col=3)
+        cluster.cluster_languages(lang_pairs, baselines_path, output_path=baselines_path + "_pmi", distance_col=3)
     if FLAGS.cognate_detection:
         print("Performing WP cognate detection using clustering...")
         results_table = cd.cognate_detection_cluster(lang_pairs, RESULTS_DIR, options, use_distance="prediction")
