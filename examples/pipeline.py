@@ -342,7 +342,8 @@ def main():
         if FLAGS.show_n_cog:
             print("Show number of cognates per language")
             cog_per_lang, cliques = data.compute_n_cognates(lang_pairs, tsv_cognates_path_train, langs=FLAGS.languages, cognates_threshold=100)
-            print(cliques)
+            print("Cognates per language: " + str(cog_per_lang))
+            print("Number of cliques: " + str(cliques))
 
     # ## Language pair-specific part
     if FLAGS.prediction or FLAGS.visualize or FLAGS.visualize_weights or FLAGS.baseline:
@@ -499,7 +500,8 @@ def main():
     if FLAGS.cognate_detection:
         print("Performing WP cognate detection using clustering...")
         results_table = cd.cognate_detection_cluster(lang_pairs, RESULTS_DIR, options, use_distance="prediction")
-    
+        print(results_table)
+
     # Phylogenetic word prediction comes after datasets have been generated for
     # all language pairs. All language pairs are then taken into account at once
     # by phylogenetic word prediction

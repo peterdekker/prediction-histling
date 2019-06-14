@@ -23,13 +23,12 @@ import random  # use python random lib for pseudo-random numbers
 # Subset object contains one portion of the dataset: train, validation or test
 class Subset():
 
-    def __init__(self, batch_size, matrix_x, matrix_x_unnormalized, matrix_y, mask_x, mask_y, matrix_x_unbounded, matrix_y_unbounded, datafile_path, datafile_ids, word_lengths):
+    def __init__(self, batch_size, matrix_x, matrix_x_unnormalized, matrix_y, mask_x, matrix_x_unbounded, matrix_y_unbounded, datafile_path, datafile_ids, word_lengths):
         self.batch_size = batch_size
         self.matrix_x = matrix_x
         self.matrix_x_unnormalized = matrix_x_unnormalized
         self.matrix_y = matrix_y
         self.mask_x = mask_x
-        self.mask_y = mask_y
         # Read in TSV file
         self.datafile_path = datafile_path
         self.datafile = pd.read_csv(self.datafile_path, sep="\t", engine="python", skipfooter=3, index_col=False)
@@ -40,7 +39,7 @@ class Subset():
         self.matrix_y_unbounded = matrix_y_unbounded
         self.word_lengths = word_lengths
         
-        assert matrix_x.shape[0] == matrix_y.shape[0] == mask_x.shape[0] == mask_y.shape[0]
+        assert matrix_x.shape[0] == matrix_y.shape[0] == mask_x.shape[0]
         self.subset_size = matrix_x.shape[0]
         self.sample_pos = 0
         self.epochs_completed = 0
@@ -131,42 +130,22 @@ class Subset():
                             self.matrix_x_unnormalized[cognate_indices],
                             self.matrix_y[cognate_indices],
                             self.mask_x[cognate_indices],
-                            self.mask_y[cognate_indices],
                             self.matrix_x_unbounded[cognate_indices],
                             self.matrix_y_unbounded[cognate_indices],
                             self.datafile_path,
                             self.datafile_ids[cognate_indices],
                             self.word_lengths[cognate_indices])
-    
-    def filter_train_cognates(self, results_table, conversion_key, threshold):
-        distances = results_table["DISTANCE_T_P"]
-        cognate_indices = []
-        # List of distances is usually a bit shorter than the whole training set,
-        # because it has been rounded to batches
-        for i in np.arange(len(distances)):
-            # Keep items which have prediction distance leq threshold
-            if distances.iloc[i] <= threshold:
-                cognate_indices.append(i)
-        return Subset(self.batch_size, self.matrix_x[cognate_indices],
-                        self.matrix_x_unnormalized[cognate_indices],
-                        self.matrix_y[cognate_indices],
-                        self.mask_x[cognate_indices],
-                        self.mask_y[cognate_indices],
-                        self.datafile_path,
-                        self.datafile_ids[cognate_indices])
-
         
 # Dataset object contains the whole dataset
 class Dataset():
 
-    def __init__(self, batch_size, matrix_x, matrix_x_unnormalized, matrix_y, mask_x, mask_y, max_length_x,
+    def __init__(self, batch_size, matrix_x, matrix_x_unnormalized, matrix_y, mask_x, max_length_x,
                     max_length_y, matrix_x_unbounded, matrix_y_unbounded, datafile_path, datafile_ids, word_lengths):
         self.batch_size = batch_size
         self.matrix_x = matrix_x
         self.matrix_x_unnormalized = matrix_x_unnormalized
         self.matrix_y = matrix_y
         self.mask_x = mask_x
-        self.mask_y = mask_y
         self.max_length_x = max_length_x
         self.max_length_y = max_length_y
         self.datafile_path = datafile_path
@@ -234,7 +213,6 @@ class Dataset():
                             self.matrix_x_unnormalized[train_indices],
                             self.matrix_y[train_indices],
                             self.mask_x[train_indices],
-                            self.mask_y[train_indices],
                             self.matrix_x_unbounded[train_indices],
                             self.matrix_y_unbounded[train_indices],
                             self.datafile_path,
@@ -245,7 +223,6 @@ class Dataset():
                             self.matrix_x_unnormalized[val_indices],
                             self.matrix_y[val_indices],
                             self.mask_x[val_indices],
-                            self.mask_y[val_indices],
                             self.matrix_x_unbounded[val_indices],
                             self.matrix_y_unbounded[val_indices],
                             self.datafile_path,
@@ -256,7 +233,6 @@ class Dataset():
                             self.matrix_x_unnormalized[test_indices],
                             self.matrix_y[test_indices],
                             self.mask_x[test_indices],
-                            self.mask_y[test_indices],
                             self.matrix_x_unbounded[test_indices],
                             self.matrix_y_unbounded[test_indices],
                             self.datafile_path,

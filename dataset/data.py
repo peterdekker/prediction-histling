@@ -14,11 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-------------------------------------------------------------------------------
-from Dataset import Dataset
+from dataset.Dataset import Dataset
 from collections import defaultdict
-import data
+#import data
+from util import utility
+
+
 import itertools
-from lingpy import *
+#from lingpy import *
 from lingpy.sequence.sound_classes import ipa2tokens, asjp2tokens
 import numpy as np
 import os
@@ -26,7 +29,8 @@ import pandas as pd
 import random
 from scipy.spatial.distance import euclidean, cosine, sqeuclidean, canberra, cityblock, correlation, chebyshev
 import sys
-import utility
+import igraph
+
 
 
 # import igraph
@@ -75,8 +79,6 @@ def convert_wordlist_tsv(input_path, source, input_type, output_path, intersecti
         df.drop("ID", axis=1, inplace=True)
     else:
         raise ValueError("Unknown file format.")
-    
-    concepts = df["CONCEPT"].unique()
     tokens = []
     if input_type == "asjp":
         # Convert to ASJP, because input file is IPA
@@ -114,7 +116,7 @@ def convert_wordlist_tsv(input_path, source, input_type, output_path, intersecti
         df_intersection = pd.read_csv(intersection_path, sep="\t")
         # Per row, retrieve matching IELex judgment from intersection
         cognates_intersection = []
-        for i, row in df.iterrows():
+        for _, row in df.iterrows():
             cog = df_intersection[((df_intersection["iso_code"] == row["DOCULECT"]) & (df_intersection["gloss_northeuralex"] == row["CONCEPT"]) & (df_intersection["ortho_northeuralex"] == row["COUNTERPART"]))]["cog_class_ielex"]
             if cog.empty:
                 cog = None
@@ -150,21 +152,6 @@ def fetch_concepts(input_path, source):
         raise ValueError("Unknown file format.")
     
     return concepts
-
-
-def _retrieve_from_storage(lang_pair, storage, concepts, only_cognates):
-    lang_a, lang_b = lang_pair
-    word_pairs = []
-    tokens_set = set()
-    for concept in concepts:
-        form_ipa_a, tokens_a, cogid_a = storage[concept][lang_a]
-        form_ipa_b, tokens_b, cogid_b = storage[concept][lang_b]
-        tokens_set.update(tokens_a.split(" "))
-        tokens_set.update(tokens_b.split(" "))
-        if cogid_a == cogid_b or (not only_cognates):
-            word_pairs.append((tokens_a, tokens_b))
-    return word_pairs, tokens_set
-
 
 def word_surface(encoded_word, conversion_key, encoding, mask=None):
     surface_tokens = []
@@ -276,7 +263,6 @@ def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, feat
     # Now combine the values from the different corpora
     max_len_x_combined = max([max_len[0] for max_len in max_len_corpora])
     max_len_y_combined = max([max_len[1] for max_len in max_len_corpora])
-    max_len_combined = (max_len_x_combined, max_len_y_combined)
     
     tokens_list_corpora_x = [f[0] for f in tokens_list_corpora]
     tokens_list_corpora_y = [f[1] for f in tokens_list_corpora]
@@ -387,7 +373,6 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
     matrix_x_unnormalized = []
     matrix_y = []
     mask_x = []
-    mask_y = []
     
     matrix_x_unbounded = []
     matrix_y_unbounded = []
@@ -417,7 +402,7 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
                 # Encode words, for use in RNN data matrix
                 # (max_len, voc_size)
                 word_encoded_x, word_mask_x = encode_word(x, features[0], max_len[0])
-                word_encoded_y, word_mask_y = encode_word(y, features[1], max_len[1])
+                word_encoded_y, _ = encode_word(y, features[1], max_len[1])
                 # Encode unbounded words (max len of word pair is max of words in pair),
                 # for use in SeqModel data matrix.
                 max_len_pair = np.maximum(len(x), len(y))
@@ -436,7 +421,6 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
                 matrix_x_unnormalized.append(word_encoded_x)
                 matrix_y.append(word_encoded_y)
                 mask_x.append(word_mask_x)
-                mask_y.append(word_mask_y)
                 
                 # Unbounded matrix for SeqModel
                 # Unbounded X matrix is always unnormalized
@@ -457,7 +441,6 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
     matrix_x_unnormalized = np.array(matrix_x_unnormalized)
     matrix_y = np.array(matrix_y)
     mask_x = np.array(mask_x)
-    mask_y = np.array(mask_y)
     assert matrix_x.shape[0] == matrix_y.shape[0]
     
     # SeqModel matrices: convert to NP array, to enable fancy indexing
@@ -479,7 +462,7 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
         if valtest:
             print("USE TRAIN M/S")
             matrix_x, _, _ = standardize(matrix_x_unnormalized, valtest=True, train_mean=train_mean, train_std=train_std)
-    return Dataset(batch_size, matrix_x, matrix_x_unnormalized, matrix_y, mask_x, mask_y, max_len[0], max_len[1], matrix_x_unbounded, matrix_y_unbounded, tsv_path, datafile_ids, word_lengths_unbounded), train_mean_calc, train_std_calc
+    return Dataset(batch_size, matrix_x, matrix_x_unnormalized, matrix_y, mask_x, max_len[0], max_len[1], matrix_x_unbounded, matrix_y_unbounded, tsv_path, datafile_ids, word_lengths_unbounded), train_mean_calc, train_std_calc
 
 
 def split_predictions(predictions, word_lengths):
@@ -537,14 +520,11 @@ def _calculate_max_len(word_lengths, count_threshold):
 
 
 def max_word_lengths(word_pairs):
-    n_words = len(word_pairs)
-    # count_threshold = n_words/20
     count_threshold = 0
     word_lengths_x = [len(p["lang0"].split(" ")) for p in word_pairs]
     word_lengths_y = [len(p["lang1"].split(" ")) for p in word_pairs]
     max_len_x = _calculate_max_len(word_lengths_x, count_threshold)
     max_len_y = _calculate_max_len(word_lengths_y, count_threshold)
-    max_len_x_y = max(max_len_x, max_len_y)
     return max_len_x, max_len_y
 
 
@@ -597,8 +577,8 @@ def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold):
     count_df.to_csv("n_cognates.tsv", sep="\t")
     
     # Create graph of language pairs with minimum number of cognates
-    graph = igraph.Graph(len(langs))
-    graph.vs["name"] = langs
+    graph = igraph.Graph()
+    graph.add_vertices(langs)
     for lang_a, lang_b in cognate_count:
         if cognate_count[lang_a, lang_b] > cognates_threshold:
             graph[lang_a, lang_b] = 1

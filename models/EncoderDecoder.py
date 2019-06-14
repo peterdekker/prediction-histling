@@ -336,7 +336,7 @@ class EncoderDecoder():
             if self.adaptive_learning_rate > 0.0:
                 # Adapt learning rate to X,Y edit distance:
                 # learn more from probable cognates
-                dist = self._compute_distance_batch_encoded(X_unnorm, Y_in, max_len_tar=self.max_len[1], voc_size_tar=self.voc_size[1], conversion_key=self.conversion_key)
+                dist = self._compute_distance_batch_encoded(X_unnorm, Y, max_len_tar=self.max_len[1], voc_size_tar=self.voc_size[1], conversion_key=self.conversion_key)
                 lr = lr - self.adaptive_learning_rate * dist
             
             # Prediction error threshold is mean+1 standard deviation

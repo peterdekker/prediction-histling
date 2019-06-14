@@ -17,13 +17,13 @@
 import bcubed
 from collections import defaultdict
 from itertools import permutations, chain
-from lingpy import *
+from lingpy import LexStat
 from lingpy.algorithm.clustering import flat_upgma, fuzzy, link_clustering, mcl
 from lingpy.algorithm.extra import affinity_propagation, infomap_clustering
 import numpy as np
 import os
 import pandas as pd
-import utility
+from util import utility
 
 
 # import igraph
@@ -41,6 +41,7 @@ import utility
         # weight = 1 - dist
         # graph[edge] = weight
     # graph.community_label_propagation()
+
 def invert_key_value(cluster_dict):
     new_dict = defaultdict(set)
     for key in cluster_dict:
@@ -75,7 +76,7 @@ def generate_gold_relabellings(gold, judgments_clusters):
         for key in perm:
             # Check if there are gold items less, else add empty set
             if gold_items:
-                k, v = gold_items.pop()
+                _, v = gold_items.pop()
             else:
                 v = set()
             new_dict[key] = v
@@ -96,7 +97,7 @@ def cognate_detection_binary(results_file, distance, thresholds):
     
     for t in thresholds:
         judgments = []
-        for index, row in df.iterrows():
+        for _, row in df.iterrows():
             judgment = 1 if row[dist_label] < t else 0
             judgments.append(judgment)
         setting = cognates_label + "_" + str(t)
@@ -112,10 +113,8 @@ def cognate_detection_cluster(lang_pairs, results_dir, options, use_distance="pr
     
     if use_distance == "prediction":
         dist_label = "DISTANCE_T_P"
-        cognates_label = "COGNATES_WP"
     elif use_distance == "source":
         dist_label = "DISTANCE_S_T"
-        cognates_label = "COGNATES_SOURCE"
     
     # Retrieve list of concepts from file from first language pair
     lang_a, lang_b = lang_pairs[0]
@@ -144,7 +143,7 @@ def cognate_detection_cluster(lang_pairs, results_dir, options, use_distance="pr
                 df_ab = pd.read_csv(results_path_ab + ".tsv", sep="\t")
                 ab = True
                 # print(str(lang_a)+","+ str(lang_b) + " available")
-                for i, row in df_ab.iterrows():
+                for _, row in df_ab.iterrows():
                     concept = row["CONCEPT"]
                     dist = row[dist_label]
                     distance[concept][(lang_a, lang_b)] = dist
@@ -166,7 +165,7 @@ def cognate_detection_cluster(lang_pairs, results_dir, options, use_distance="pr
                 df_ba = pd.read_csv(results_path_ba + ".tsv", sep="\t")
                 ba = True
                 # print(str(lang_b)+","+ str(lang_a) + " available")
-                for i, row in df_ba.iterrows():
+                for _, row in df_ba.iterrows():
                     concept = row["CONCEPT"]
                     dist = row[dist_label]
                     distance[concept][(lang_b, lang_a)] = dist
@@ -270,8 +269,8 @@ def cognate_detection_cluster(lang_pairs, results_dir, options, use_distance="pr
             results_df = results_df.append({"Method":method_threshold, "Precision":mean_precision, "Recall":mean_recall, "F":mean_f}, ignore_index=True)
     results_df = results_df.set_index("Method")
     results_df = results_df.sort_values("F")
-    print(results_df)
-    return mean_precision, mean_recall, mean_f
+    # ?? Also return mean_precision, mean_recall, mean_f
+    return results_df
 
 
 def evaluation(results_table, existing_eval_table=None, tune=None, lang_pair=None):
