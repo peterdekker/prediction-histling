@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-------------------------------------------------------------------------------
-import data
+from dataset import data
 import numpy as np  # use numpy for real random numbers
 import pandas as pd
 import random  # use python random lib for pseudo-random numbers
@@ -80,21 +80,20 @@ class Subset():
             self.matrix_x_unnormalized = self.matrix_x_unnormalized[perm]
             self.matrix_y = self.matrix_y[perm]
             self.mask_x = self.mask_x[perm]
-            self.mask_y = self.mask_y[perm]
 
             start = 0
             self.sample_pos = self.batch_size
             assert self.batch_size <= self.subset_size
 
         end = self.sample_pos
-        return self.matrix_x[start:end], self.matrix_x_unnormalized[start:end], self.matrix_y[start:end], self.mask_x[start:end], self.mask_y[start:end]
+        return self.matrix_x[start:end], self.matrix_x_unnormalized[start:end], self.matrix_y[start:end], self.mask_x[start:end]
     
     def get_dataframe(self, conversion_key, input_encoding, output_encoding):
         input_words = []
         target_words = []
         for ex in np.arange(self.subset_size):
-            input_word, input_tokens = data.word_surface(self.matrix_x[ex], conversion_key[0], input_encoding)
-            target_word, target_tokens = data.word_surface(self.matrix_y[ex], conversion_key[1], output_encoding)
+            input_word, _ = data.word_surface(self.matrix_x[ex], conversion_key[0], input_encoding)
+            target_word, _ = data.word_surface(self.matrix_y[ex], conversion_key[1], output_encoding)
             
             input_cut = [t for t in input_word if t != "."]
             target_cut = [t for t in target_word if t != "."]

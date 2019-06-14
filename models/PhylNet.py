@@ -332,7 +332,7 @@ class PhylNet(EncoderDecoder):
         while (np.any([epochs_completed[lang_a][lang_b] < n_epochs for lang_a, lang_b in pairs])):
             # Per epoch, go through every lang pair
             for lang_a, lang_b in pairs:
-                X, X_unnorm, Y, m_X, m_Y = trainset[(lang_a, lang_b)].get_batch()
+                X, X_unnorm, Y, m_X = trainset[(lang_a, lang_b)].get_batch()
                 lr = self.learning_rate * (self.learning_rate_decay ** epochs_completed[lang_a][lang_b])
                 if self.adaptive_learning_rate > 0.0:
                     # Adapt learning rate to X,Y edit distance:
@@ -359,7 +359,7 @@ class PhylNet(EncoderDecoder):
                     loss_batches = []
                     distance_batches = []
                     for b in np.arange(n_val_batches[lang_a][lang_b]):
-                        X_val, X_val_unnorm, Y_val, mask_X_val, mask_Y_val = valset[(lang_a, lang_b)].get_batch(val=True)
+                        X_val, X_val_unnorm, Y_val, mask_X_val = valset[(lang_a, lang_b)].get_batch(val=True)
                         # Calculate and store loss
                         # Prediction error threshold is mean+1 standard deviation
                         error_threshold = np.mean(self.prediction_errors[lang_a][lang_b]) + self.cognacy_prior * np.std(self.prediction_errors[lang_a][lang_b])
@@ -415,7 +415,7 @@ class PhylNet(EncoderDecoder):
             text_output += header_template.format("INPUT", "TARGET", "PREDICTION", "DISTANCE") + "\n"
 
         for b in np.arange(n_batches):
-            X_test, X_test_unnorm, Y_test, mask_X_test, mask_Y_test = testset.get_batch(val=True)
+            X_test, X_test_unnorm, Y_test, mask_X_test = testset.get_batch(val=True)
             predictions = predict_func(X_test, mask_X_test)
             input_words, target_words, predicted_words, distances_t_p, distances_s_t = self._compute_distance_batch_encoded(X_test_unnorm, Y_test, max_len_tar=max_len_tar, voc_size_tar=voc_size_tar, conversion_key=conversion_key, predictions=predictions)
             all_distances_t_p += distances_t_p

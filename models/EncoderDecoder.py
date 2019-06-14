@@ -14,10 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-------------------------------------------------------------------------------
-from GatedLayer import gated_layer
-import baseline
-from collections import defaultdict
-import data
+from models.GatedLayer import gated_layer
+from models import baseline
+from util import utility
+from dataset import data
+
+# Import library
 import lasagne
 from lasagne.layers import InputLayer, DropoutLayer, DenseLayer, ReshapeLayer, SliceLayer, DimshuffleLayer, ConcatLayer
 from lasagne.regularization import regularize_layer_params, regularize_network_params, l2
@@ -26,7 +28,7 @@ import pandas as pd
 import theano
 import theano.tensor as T
 import time
-import utility
+from collections import defaultdict
 
 
 class EncoderDecoder():
@@ -209,7 +211,7 @@ class EncoderDecoder():
         # decoder_input_orig keeps the value of l_encoder, which is given to this method
         decoder_input_orig = decoder_input
         # decoder_input then becomes a repeated l_encoder
-        for i in np.arange(max_len - 1):
+        for _ in np.arange(max_len - 1):
             decoder_input = ConcatLayer([decoder_input, decoder_input_orig])
         
         decoder_input = ReshapeLayer(decoder_input, (self.batch_size, n_features_context, max_len), name="reshape_enc_dec")
@@ -329,7 +331,7 @@ class EncoderDecoder():
         plot_losses = []
         plot_distances = []
         while (epochs_completed < n_epochs):
-            X, X_unnorm, Y, m_X, m_Y = trainset.get_batch()
+            X, X_unnorm, Y, m_X = trainset.get_batch()
             lr = self.learning_rate * (self.learning_rate_decay ** epochs_completed)
             if self.adaptive_learning_rate > 0.0:
                 # Adapt learning rate to X,Y edit distance:
@@ -351,8 +353,8 @@ class EncoderDecoder():
             if prev_epochs_completed < epochs_completed:
                 loss_batches = []
                 distance_batches = []
-                for b in np.arange(n_val_batches):
-                    X_val, X_val_unnorm, Y_val, mask_X_val, mask_Y_val = valset.get_batch(val=True)
+                for _ in np.arange(n_val_batches):
+                    X_val, X_val_unnorm, Y_val, mask_X_val = valset.get_batch(val=True)
                     # Calculate and store loss
                     # Prediction error threshold is mean+1 standard deviation
                     error_threshold = np.mean(self.prediction_errors) + self.cognacy_prior * np.std(self.prediction_errors)
@@ -383,8 +385,8 @@ class EncoderDecoder():
         if predictions is not None:
             predictions = np.reshape(predictions, (self.batch_size, max_len_tar, voc_size_tar))
         for ex in np.arange(self.batch_size):
-            input_word, input_tokens = data.word_surface(X[ex], conversion_key[0], self.input_encoding)
-            target_word, target_tokens = data.word_surface(Y[ex], conversion_key[1], self.output_encoding)
+            _, input_tokens = data.word_surface(X[ex], conversion_key[0], self.input_encoding)
+            _, target_tokens = data.word_surface(Y[ex], conversion_key[1], self.output_encoding)
             
             input_cut = [t for t in input_tokens if t != "."]
             target_cut = [t for t in target_tokens if t != "."]
@@ -426,8 +428,8 @@ class EncoderDecoder():
             template = "{0:20} {1:20} {2:20} {3:.2f}"
             text_output += header_template.format("INPUT", "TARGET", "PREDICTION", "DISTANCE") + "\n"
 
-        for b in np.arange(n_batches):
-            X_test, X_test_unnorm, Y_test, mask_X_test, mask_Y_test = testset.get_batch(val=True)
+        for _ in np.arange(n_batches):
+            X_test, X_test_unnorm, Y_test, mask_X_test = testset.get_batch(val=True)
             predictions = predict_func(X_test, mask_X_test)
             input_words, target_words, predicted_words, distances_t_p, distances_s_t = self._compute_distance_batch_encoded(X_test_unnorm, Y_test, max_len_tar=max_len_tar, voc_size_tar=voc_size_tar, conversion_key=conversion_key, predictions=predictions)
             all_distances_t_p += distances_t_p

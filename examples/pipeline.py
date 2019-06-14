@@ -141,44 +141,6 @@ def word_prediction(lang_a, lang_b, max_len, train, val, test, conversion_key, v
               valset=testset,
               n_epochs=FLAGS.n_epochs)
     
-    # Filter input on cognates
-    if FLAGS.filter_train < 1.0:
-        print("Predict on training set, in order to filter training set.")
-        # Predict on training samples
-        # (causing some overfitting)
-        avg_distance, results_table, _ = net.predict(testset=train)
-        
-        # Filter training set on cognacy based on prediction results
-        train_filtered = train.filter_train_cognates(results_table, conversion_key, threshold=FLAGS.filter_train)
-        print("# training items after filtering:" + str(train_filtered.get_size()))
-        # Create new, untrained network
-        print("Create new RNN instance.")
-        net = EncoderDecoder(batch_size=FLAGS.batch_size,
-                            max_len=max_len,
-                            voc_size=voc_size,
-                            n_hidden=FLAGS.hidden,
-                            n_layers_encoder=FLAGS.layers_encoder,
-                            n_layers_decoder=FLAGS.layers_decoder,
-                            n_layers_dense=FLAGS.layers_dense,
-                            bidirectional_encoder=not FLAGS.no_bidirectional_encoder,
-                            bidirectional_decoder=FLAGS.bidirectional_decoder,
-                            encoder_only_final=not FLAGS.encoder_all_steps,
-                            dropout=FLAGS.dropout,
-                            learning_rate=FLAGS.learning_rate,
-                            learning_rate_decay=FLAGS.lr_decay,
-                            adaptive_learning_rate=FLAGS.adaptive_lr,
-                            reg_weight=FLAGS.reg_weight,
-                            grad_clip=FLAGS.grad_clip,
-                            initialization=FLAGS.init,
-                            gated_layer_type=FLAGS.gated_layer_type,
-                            cognacy_prior=FLAGS.cognacy_prior,
-                            encoding=FLAGS.encoding,
-                            conversion_key=conversion_key)
-        # Train network on filtered train set
-        losses, distances = net.train(trainset=train_filtered,
-                                        valset=testset,
-                                        n_epochs=FLAGS.n_epochs)
-    
     # Predict on testset (which can be validation set if FLAGS.validation)
     print("Predict and show results.")
     avg_distance, results_table, context_vectors = net.predict(testset=testset, max_len_tar=max_len[1], voc_size_tar=voc_size[1], conversion_key=conversion_key, predict_func=net.predict_func)
@@ -367,7 +329,6 @@ def main():
         print(" - Detect cognates in entire dataset using LexStat.")
         cd.cognate_detection_lexstat(tsv_path_valtest, tsv_cognates_path_valtest, input_type=FLAGS.input_type)
         
-        eval_table = None
         excluded_concepts_training = []
         if FLAGS.train_corpus != FLAGS.valtest_corpus:
             print("Loading IElex->NorthEuraLex concept mapping...")
