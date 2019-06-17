@@ -33,27 +33,27 @@ def compute_baseline(lang_a, lang_b, sounds, training, testing, baselines_path):
     
     pmi = estimatePMI(training, levdict, -1, -1, sounds)
 
-    for i in range(10):
+    for _ in range(10):
         pmi = estimatePMI(training, pmi, gp1, gp2, sounds)
 
-    alignments = array([nw(w1, w2, pmi, gp1, gp2)[1]
+    alignments = np.array([nw(w1, w2, pmi, gp1, gp2)[1]
                         for (w1, w2) in training.values])
 
-    a = array([concatenate(list(map(list, alignments[:, 0]))),
-               concatenate(list(map(list, alignments[:, 1])))])
+    a = np.array([np.concatenate(list(map(list, alignments[:, 0]))),
+               np.concatenate(list(map(list, alignments[:, 1])))])
 
     aCounts = pd.crosstab(a[0], a[1])
 
     soundOccs2 = pd.value_counts(a[1])
     testing['prediction'] = [prediction(w, aCounts, soundOccs2) for w in testing.values[:, 0]]
     
-    baseline = array([ldn(x, y)
+    baseline = np.array([ldn(x, y)
                   for (x, y) in testing.values[:, [0, 1]]])
 
-    model = array([ldn(str(x), str(y))
+    model = np.array([ldn(str(x), str(y))
                    for (x, y) in testing.values[:, [2, 1]]])
-    baseline_str = str(mean(baseline))
-    fo_model_str = str(mean(model))
+    baseline_str = str(np.mean(baseline))
+    fo_model_str = str(np.mean(model))
     print('baseline: ' + baseline_str)
     print('first order model: ' + fo_model_str)
     # Write distances to file
@@ -72,8 +72,8 @@ def nw(x, y, lodict, gp1, gp2):
     Returns the alignment score and one optimal alignment.
     """
     n, m = len(x), len(y)
-    dp = zeros((n + 1, m + 1))
-    pointers = zeros((n + 1, m + 1), int)
+    dp = np.zeros((n + 1, m + 1))
+    pointers = np.zeros((n + 1, m + 1), int)
     for i in range(1, n + 1):
         dp[i, 0] = dp[i - 1, 0] + (gp2 if i > 1 else gp1)
         pointers[i, 0] = 1
@@ -86,7 +86,7 @@ def nw(x, y, lodict, gp1, gp2):
             insert = dp[i - 1, j] + (gp2 if pointers[i - 1, j] == 1 else gp1)
             delet = dp[i, j - 1] + (gp2 if pointers[i, j - 1] == 2 else gp1)
             dp[i, j] = max([match, insert, delet])
-            pointers[i, j] = argmax([match, insert, delet])
+            pointers[i, j] = np.argmax([match, insert, delet])
     alg = []
     i, j = n, m
     while(i > 0 or j > 0):
@@ -101,14 +101,14 @@ def nw(x, y, lodict, gp1, gp2):
         if pt == 2:
             j -= 1
             alg = [['-', y[j]]] + alg
-    return dp[-1, -1], array([''.join(x) for x in array(alg).T])
+    return dp[-1, -1], np.array([''.join(x) for x in np.array(alg).T])
 
 
 def estimatePMI(training, lodict, gp1, gp2, sounds):
-    alignments = array([nw(w1, w2, lodict, gp1, gp2)[1]
+    alignments = np.array([nw(w1, w2, lodict, gp1, gp2)[1]
                         for (w1, w2) in training.values])
-    a = array([concatenate(list(map(list, alignments[:, 0]))),
-               concatenate(list(map(list, alignments[:, 1])))])
+    a = np.array([np.concatenate(list(map(list, alignments[:, 0]))),
+               np.concatenate(list(map(list, alignments[:, 1])))])
     aCounts = pd.crosstab(a[0], a[1]).reindex(sounds, fill_value=0)
     aCounts = aCounts.T.reindex(sounds, fill_value=0).T
     aCounts[aCounts == 0] = 1e-4
@@ -117,7 +117,7 @@ def estimatePMI(training, lodict, gp1, gp2, sounds):
     soundOccs2 = pd.value_counts(a[1]).reindex(sounds, fill_value=1e-2)
     soundOccs1 /= soundOccs1.sum()
     soundOccs2 /= soundOccs2.sum()
-    pmi = ((log(aCounts) - log(soundOccs2)).T - log(soundOccs1)).T
+    pmi = ((np.log(aCounts) - np.log(soundOccs2)).T - np.log(soundOccs1)).T
     return pmi
 
 

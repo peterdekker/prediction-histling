@@ -15,12 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-------------------------------------------------------------------------------
 from collections import defaultdict
-import data
 from lingpy.align.pairwise import sw_align, nw_align
 import numpy as np
 import os
 import pandas as pd
-import utility
+
+from util import utility
+from dataset import data
 
 
 ielex_original = "data/ielex-4-26-2016.csv"
@@ -50,7 +51,7 @@ def compile_table(table_filename):
     # Add extra column with equivalent forms from NorthEuraLex
     nelex_entries = []
     distances = []
-    for i, row in df_ielex.iterrows():
+    for _, row in df_ielex.iterrows():
         # Default values, if no equivalent is found in NElex
         entry = ""
         min_dist = 1.0
@@ -158,7 +159,7 @@ def correct_ielex(df_ielex_corr, language, subs_df):
     used_keys = []
     # No guarantee that longer keys (eg. 't S'), come before shorter keys (eg. 't')
     # In practice, in our data, longer keys are more frequent
-    for i, row in subs_df.iterrows():
+    for _, row in subs_df.iterrows():
         key = row["IE"]
         if key in used_keys:
             continue

@@ -229,7 +229,7 @@ class ExposedLSTMLayer(MergeLayer):
         # Because scan iterates over the first dimension we dimshuffle to
         # (n_time_steps, n_batch, n_features)
         input = input.dimshuffle(1, 0, 2)
-        seq_len, num_batch, _ = input.shape
+        _, num_batch, _ = input.shape
 
         # Stack input weight matrices into a (num_inputs, 4*num_units)
         # matrix, which speeds up computation

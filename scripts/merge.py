@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-------------------------------------------------------------------------------
 import pandas as pd
-import utility
+from util import utility
 
 
 distances = pd.read_csv("distances.txt", header=None)

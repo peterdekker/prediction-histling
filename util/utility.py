@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import os
 import re
 import theano.tensor as T
+import random
 
 
 sounds = ['!', '3', '4', '5', '7', '8', 'C', 'E', 'G',

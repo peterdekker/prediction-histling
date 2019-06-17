@@ -14,11 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-------------------------------------------------------------------------------
-from EncoderDecoder import EncoderDecoder
-from GatedLayer import gated_layer
-import baseline
+from models.EncoderDecoder import EncoderDecoder
+from models.GatedLayer import gated_layer
+from models import baseline
+
 from collections import defaultdict
-import data
 import lasagne
 from lasagne.layers import InputLayer, DropoutLayer, DenseLayer, ReshapeLayer, SliceLayer, DimshuffleLayer, ConcatLayer
 from lasagne.regularization import regularize_layer_params, regularize_network_params, l2
@@ -28,7 +28,7 @@ import pandas as pd
 import theano
 import theano.tensor as T
 import time
-import utility
+from util import utility
 
 
 class PhylNet(EncoderDecoder):
@@ -251,7 +251,6 @@ class PhylNet(EncoderDecoder):
             print("Compiling functions ...")
             if lang_b in self.langs:
                 self.train_func[lang_a][lang_b], self.loss_func[lang_a][lang_b], self.predict_func[lang_a][lang_b], _ = self._compile_functions(X_input=self.l_in_X[lang_a].input_var, Y_input=self.l_target_Y[lang_b].input_var, mask=self.l_mask_X[lang_a].input_var, error_threshold=self.error_threshold[lang_a][lang_b], loss=self.loss[lang_a][lang_b], updates=self.updates[lang_a][lang_b], pred_values_determ=self.predicted_values_deterministic[lang_a][lang_b], context_vector=None)
-            output_langs = self.langs
             if self.train_proto:
                 self.train_func[lang_a][lang_b], self.loss_func[lang_a][lang_b], self.predict_func[lang_a][lang_b], _ = self._compile_functions(X_input=self.l_in_X[lang_a].input_var, Y_input=None, mask=self.l_mask_X[lang_a].input_var, error_threshold=self.error_threshold[lang_a][lang_b], loss=self.loss[lang_a][lang_b], updates=self.updates[lang_a][lang_b], pred_values_determ=self.predicted_values_deterministic[lang_a][lang_b], context_vector=None)
     
@@ -358,7 +357,7 @@ class PhylNet(EncoderDecoder):
                 if prev_epochs_completed[lang_a][lang_b] < epochs_completed[lang_a][lang_b]:
                     loss_batches = []
                     distance_batches = []
-                    for b in np.arange(n_val_batches[lang_a][lang_b]):
+                    for _ in np.arange(n_val_batches[lang_a][lang_b]):
                         X_val, X_val_unnorm, Y_val, mask_X_val = valset[(lang_a, lang_b)].get_batch(val=True)
                         # Calculate and store loss
                         # Prediction error threshold is mean+1 standard deviation
@@ -414,7 +413,7 @@ class PhylNet(EncoderDecoder):
             template = "{0:20} {1:20} {2:20} {3:.2f}"
             text_output += header_template.format("INPUT", "TARGET", "PREDICTION", "DISTANCE") + "\n"
 
-        for b in np.arange(n_batches):
+        for _ in np.arange(n_batches):
             X_test, X_test_unnorm, Y_test, mask_X_test = testset.get_batch(val=True)
             predictions = predict_func(X_test, mask_X_test)
             input_words, target_words, predicted_words, distances_t_p, distances_s_t = self._compute_distance_batch_encoded(X_test_unnorm, Y_test, max_len_tar=max_len_tar, voc_size_tar=voc_size_tar, conversion_key=conversion_key, predictions=predictions)
@@ -435,7 +434,6 @@ class PhylNet(EncoderDecoder):
             target_word = all_target_words[i]
             predicted_word = all_predicted_words[i]
             dist_t_p = all_distances_t_p[i]
-            dist_s_t = all_distances_s_t[i]
             if print_output:
                 text_output += template.format("".join(input_word), "".join(target_word), "".join(predicted_word), dist_t_p) + "\n"
             row_dict["INPUT"].append(" ".join(input_word))

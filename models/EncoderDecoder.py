@@ -323,8 +323,6 @@ class EncoderDecoder():
     def train(self, trainset, valset, n_epochs):
         n_val_batches = valset.get_size() // self.batch_size
         
-        # To compute mean error, look back at last processed 10% of training set
-        n_batches_history = trainset.get_size() // self.batch_size
         print("Training ...")
         epochs_completed = 0
         start_time = time.time()
@@ -391,7 +389,7 @@ class EncoderDecoder():
             input_cut = [t for t in input_tokens if t != "."]
             target_cut = [t for t in target_tokens if t != "."]
             if predictions is not None:
-                predicted_word, predicted_tokens = data.word_surface(predictions[ex], conversion_key[1], self.output_encoding)
+                _, predicted_tokens = data.word_surface(predictions[ex], conversion_key[1], self.output_encoding)
                 predicted_cut = [t for t in predicted_tokens if t != "."]
                 dist_t_p = utility.calculate_levenshtein(target_cut, predicted_cut)
                 distances_t_p.append(dist_t_p)

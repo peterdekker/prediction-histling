@@ -14,15 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-------------------------------------------------------------------------------
-import baseline
+from models import baseline
+from util import utility
+from dataset import data
+
 from collections import defaultdict
-import data
 import numpy as np
 import pandas as pd
 from seqlearn.hmm import MultinomialHMM
 from seqlearn.perceptron import StructuredPerceptron
 import time
-import utility
 
 
 class SeqModel():

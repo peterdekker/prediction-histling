@@ -14,10 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-------------------------------------------------------------------------------
+
+from cognatedetection import cd
+from util import utility
+
 import bcubed
 import pickle
-import cd
-from collections import defaultdict
 from lingpy.algorithm.clustering import flat_upgma, fuzzy, link_clustering, mcl
 from lingpy.algorithm.extra import affinity_propagation, infomap_clustering
 from lingpy.align.pairwise import sw_align, nw_align
@@ -29,7 +31,7 @@ from scipy.spatial.distance import cosine, euclidean
 from scipy.stats import mode
 from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import pairwise_distances
-import utility
+from collections import defaultdict
 
 
 # from sklearn.manifold import TSNE
@@ -37,7 +39,7 @@ def show_output_substitutions(results_path, subs_st_path, subs_sp_path):
     source_target_subs = defaultdict(int)
     source_predicted_subs = defaultdict(int)
     df = pd.read_csv(results_path + ".tsv", sep="\t")
-    for index, row in df.iterrows():
+    for _, row in df.iterrows():
         source_tokens = row["INPUT"].split()
         target_tokens = row["TARGET"].split()
         predicted_tokens = row["PREDICTION"].split()
@@ -82,7 +84,7 @@ def find_substitutions(seq1, seq2, subs):
 
 
 def visualize_encoding(emb_matrix, phon_matrix, langs, results_dir, methods=[("Affinity propagation", affinity_propagation)], thresholds=[0.2]):
-    lang_a, lang_b = langs
+    lang_a, _ = langs
     emb_matrix = emb_matrix.drop(["."])
     phon_matrix = phon_matrix.drop(["."])
     
@@ -302,10 +304,10 @@ def fit_plot(vectors, input_words, method, title, filename, target_words_label=N
     y = vectors_2d[:, 1]
     # Create scatter plot and add input words to data points
     if encoding_plot:
-        fig, ax = plt.subplots(figsize=(12, 10))
+        _, ax = plt.subplots(figsize=(12, 10))
         ax.scatter(x, y, s=0)
     else:
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
         ax.scatter(x, y)
     for i, inp_word in enumerate(input_words):
         annotation = inp_word

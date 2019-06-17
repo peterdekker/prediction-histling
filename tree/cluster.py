@@ -24,8 +24,9 @@
 # EN [0.8, 0.7, 0.8, 0.0, 0.3],
 # NL [0.2, 0.6, 0.8, 0.3, 0.0]]
 
-from lingpy import *
 import numpy as np
+from lingpy.algorithm.clustering import upgma, neighbor
+from lingpy.basic.tree import Tree
 
 
 def cluster_languages(lang_pairs, distances_path, output_path, distance_col=2):
@@ -51,7 +52,7 @@ def cluster_languages(lang_pairs, distances_path, output_path, distance_col=2):
         row = []
         for ix_b, lang_b in enumerate(languages):
             if lang_a == lang_b:
-                d = 0.0
+                matrix[ix_a, ix_b] = 0.0
             elif (lang_a, lang_b) in distance and (lang_b, lang_a) in distance:
                 # If a,b and b,a available: take mean and assign to both
                 m = np.mean([distance[(lang_a, lang_b)], distance[(lang_b, lang_a)]])
