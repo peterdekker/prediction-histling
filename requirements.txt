@@ -10,5 +10,6 @@ bcubed
 python-igraph
 newick
 sklearn
+python-Levenshtein
 https://github.com/Theano/Theano/archive/master.zip
 https://github.com/Lasagne/Lasagne/archive/master.zip

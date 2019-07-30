@@ -64,16 +64,16 @@ class SeqModel():
         Y = data.split_predictions(Y, word_lengths)
         for ex in np.arange(len(X)):
             # X is encoded and has to be decoded
-            input_word, input_tokens = data.word_surface(X[ex], self.conversion_key[0], self.input_encoding)
+            _, input_tokens = data.word_surface(X[ex], self.conversion_key[0], self.input_encoding)
             # Y is already in surface form
-            target_word = "".join(Y[ex])
+            #target_word = "".join(Y[ex])
             target_tokens = Y[ex]
             
             input_cut = [t for t in input_tokens if t != "."]
             target_cut = [t for t in target_tokens if t != "."]
             if predictions is not None:
                 # Predictions are already in surface form
-                predicted_word = "".join(predictions[ex])
+                #predicted_word = "".join(predictions[ex])
                 predicted_tokens = predictions[ex]
                 predicted_cut = [t for t in predicted_tokens if t != "."]
                 dist_t_p = utility.calculate_levenshtein(target_cut, predicted_cut)
