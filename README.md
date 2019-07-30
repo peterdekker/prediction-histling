@@ -1,8 +1,9 @@
 # wordprediction: Use neural networks to reconstruct language ancestry
 
 ## Installation
-This program should be executed with Python 3. Before running it, you should install the dependencies.
+This program should be executed with Python 3. Install python3 and python3-igraph on your computer.
 
+Now, install the Python dependencies
 If you want to install the dependencies only for this program, create a virtual environment
 ```
 virtualenv env -p python3
