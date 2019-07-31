@@ -93,16 +93,16 @@ def get_baselines_path(output_dir, options):
     return os.path.join(output_dir, "base" + "." + options)
 
 
-def create_option_string(FLAGS):
+def create_option_string(config):
     filename = ""
     # All modes except 'cognate_detection' are excluded from option string
     # CD result files have to be identified (they are different, also non-cognates)
     # when performing cognate detection
     omit = ["prediction", "cluster", "visualize", "visualize_weights", "visualize_encoding", "baseline", "baseline_cluster", "tune_cd", "tune_source_cd", "show_n_cog", "export_weights", "input_type", "grad_clip", "layers_encoder", "layers_decoder", "layers_dense", "adaptive_lr"]
     # Only put languages in file name during phylogenetic word prediction
-    if not FLAGS.phyl:
+    if not config["phyl"]:
         omit.append("languages")
-    for key, value in sorted(vars(FLAGS).items()):
+    for key, value in sorted(config.items()):
         # Use only first letter of every word part
         key_short = shorten(key)
         if isinstance(value, bool):

@@ -21,7 +21,6 @@ from dataset import data
 from collections import defaultdict
 import numpy as np
 import pandas as pd
-from seqlearn.hmm import MultinomialHMM
 from seqlearn.perceptron import StructuredPerceptron
 import time
 

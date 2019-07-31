@@ -1,20 +1,19 @@
 # wordprediction: Use neural networks to reconstruct language ancestry
 
 ## Installation
-This program should be executed with Python 3. Install python3 and python3-igraph on your computer.
+This program should be executed with Python 3. Install python3 and python3-igraph on your computer, and the development headers for libxml2 (libxml2-dev in Ubuntu).
 
 Now, install the Python dependencies
-If you want to install the dependencies only for this program, create a virtual environment
+First, create a virtual environement, and activate it
 ```
-virtualenv env -p python3
+python3 -m venv env
 source env/bin/activate
 ```
 
-Regardless of whether you created a virtual environment or not, install the dependencies
+Then, install the dependencies:
 ```
 pip3 install -r requirements.txt
 ```
-Invoke this command as root, if you want to do a system-wide installation of the dependencies (instead of only the current user).
 
 ## General workflow
 Execute python3 pipeline.py
