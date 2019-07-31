@@ -14,7 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-------------------------------------------------------------------------------
-import Levenshtein
+
+from util import utility
+
 import numpy as np
 import pandas as pd
 import sys
@@ -120,7 +122,7 @@ testing['prediction'] = [prediction(w) for w in testing.values[:, 0]]
 
 
 def ldn(x, y):
-    return 1.0 * Levenshtein.distance(x, y) / max(len(x), len(y))
+    return 1.0 * utility.calculate_levenshtein(x,y)
 
 
 baseline = np.array([ldn(x, y)

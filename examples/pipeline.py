@@ -16,10 +16,10 @@
 #-------------------------------------------------------------------------------
 import models.baseline as baseline
 from prediction import prediction
+import pickle
 
 from cognatedetection import cd
 from tree import cluster
-
 from dataset import data
 from util import utility
 from visualize import visualize
@@ -30,8 +30,6 @@ import lingpy
 import argparse
 import numpy as np
 import os
-import copy
-import pickle
 import pandas as pd
 
 # ## Command line arguments
@@ -49,13 +47,13 @@ BATCH_SIZE = 10
 # Optimization learning rate
 LEARNING_RATE = 0.01
 REG_WEIGHT = 0.0
-INITIALIZATION = "xavier_normal"
-OPTIMIZER = "adagrad"
+INITIALIZATION = "xavier_normal" # ["constant", "xavier_normal", "xavier_uniform"])
+OPTIMIZER = "adagrad" #  choices=["adagrad", "adam", "sgd"]
 # All gradients above this will be clipped
 GRAD_CLIP = 100
 # Number of epochs to train the net
 N_EPOCHS = 15
-GATED_LAYER_TYPE = "gru"
+GATED_LAYER_TYPE = "gru" # ["lstm", "gru"]
 N_LAYERS_DENSE = 1
 PREDICTION = False
 SEQ = False
@@ -71,8 +69,8 @@ COGNATE_DETECTION = False
 TUNE_CD = False
 # TUNE_SOURCE_CD = False
 SHOW_N_COG = False
-INPUT_TYPE = "asjp"
-INPUT_ENCODING = "character"
+INPUT_TYPE = "asjp" # choices=["asjp", "ipa"]
+INPUT_ENCODING = "character" # ["phonetic", "character", "embedding"]
 OUTPUT_ENCODING = "character"  # fixed, there is no cmd line option for this
 ENCODER_DECODER_HID_INIT = False
 VALIDATION = False
@@ -83,15 +81,15 @@ ADAPTIVE_LR = 0.0
 COGNACY_PRIOR = 1.0
 FILTER_TRAIN = 1.0
 EXPORT_WEIGHTS = False
-TRAIN_CORPUS = "northeuralex"
-VALTEST_CORPUS = "northeuralex"
+TRAIN_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
+VALTEST_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
 TRAIN_PROTO = False
 
 # ## Other arguments
 RESULTS_DIR = "output"
 FEATURE_FILE = "data/asjp_phonetic_features_new.tsv"
 LANGUAGES = ["nld", "deu"]
-LANG_FAMILY = "none"
+LANG_FAMILY = "none" # choices=["none", "slav", "ger"]
 SAMPLE_LANG_PAIRS = None
 
 LANG_FAMILIES_DICT = {
@@ -294,10 +292,10 @@ def main():
                 
             if FLAGS.prediction and not FLAGS.seq and not FLAGS.phyl:
                 print("Performing word prediction for pair (" + lang_a + ", " + lang_b + ")")
-                prediction.word_prediction(lang_a, lang_b, (max_len[lang_pair[0]], max_len[lang_pair[1]]), train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], voc_size, results_path[lang_pair], distances_path + ".txt", context_vectors_path[lang_pair] + ".p")
+                prediction.word_prediction(lang_a, lang_b, (max_len[lang_pair[0]], max_len[lang_pair[1]]), train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], voc_size, results_path[lang_pair], distances_path + ".txt", context_vectors_path[lang_pair] + ".p", OUTPUT_ENCODING, FLAGS)
             if FLAGS.prediction and FLAGS.seq and not FLAGS.phyl:
                 print("Performing SeqModel word prediction for pair (" + lang_a + ", " + lang_b + ")")
-                prediction.word_prediction_seq(lang_a, lang_b, train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], results_path[lang_pair], distances_path + ".txt")
+                prediction.word_prediction_seq(lang_a, lang_b, train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], results_path[lang_pair], distances_path + ".txt", FLAGS)
             if FLAGS.baseline and FLAGS.input_type == "asjp":
                 print("Performing baseline results for pair(" + lang_a + ", " + lang_b + ")")
                 sounds = (list(features[0].index), list(features[1].index))
@@ -339,7 +337,7 @@ def main():
         tree_string = "((nld,deu),eng)"  # unused at the moment
         if len(FLAGS.languages) >= 3:
             results_path_proto = utility.create_path(RESULTS_DIR, options, prefix="proto_")  # lang-pair independent path
-            prediction.word_prediction_phyl(FLAGS.languages, lang_pairs, tree_string, max_len, train, val, test, conversion_key_general, voc_size, results_path, results_path_proto, distances_path + ".txt", context_vectors_path, plot_path_phyl)
+            prediction.word_prediction_phyl(FLAGS.languages, lang_pairs, tree_string, max_len, train, val, test, conversion_key_general, voc_size, results_path, results_path_proto, distances_path + ".txt", context_vectors_path, plot_path_phyl, OUTPUT_ENCODING, FLAGS)
         else:
             print("Please supply 3 languages, the first 2 being more closely related than the last.")
     
@@ -354,64 +352,8 @@ def print_flags(FLAGS):
 
 if __name__ == "__main__":
     if __name__ == "__main__":
-        # Command line arguments
-        parser = argparse.ArgumentParser()
-        # Mode
-        parser.add_argument('--prediction', action='store_true', default=PREDICTION)
-        parser.add_argument('--seq', action='store_true', default=SEQ)
-        parser.add_argument('--phyl', action='store_true', default=PHYL)
-        parser.add_argument('--baseline', action='store_true', default=BASELINE)
-        parser.add_argument('--cluster', action='store_true', default=CLUSTER)
-        parser.add_argument('--baseline_cluster', action='store_true', default=BASELINE_CLUSTER)
-        parser.add_argument('--visualize', action='store_true', default=VISUALIZE)
-        parser.add_argument('--visualize_weights', action='store_true', default=VISUALIZE_WEIGHTS)
-        parser.add_argument('--visualize_encoding', action='store_true', default=VISUALIZE_ENCODING)
-        parser.add_argument('--cognate_detection', action='store_true', default=COGNATE_DETECTION)
-        # parser.add_argument('--tune_cd', action='store_true', default=TUNE_CD)
-        # parser.add_argument('--tune_source_cd', action='store_true', default=TUNE_SOURCE_CD)
-        parser.add_argument('--show_n_cog', action='store_true', default=SHOW_N_COG)
         
-        # SeqModel options
-        parser.add_argument('--n_iter_seq', type=int, default=N_ITER_SEQ)
-        
-        # Workflow options
-        parser.add_argument('--languages', nargs="+", default=LANGUAGES)
-        parser.add_argument('--lang_family', default=LANG_FAMILY, choices=["none", "slav", "ger"])
-        parser.add_argument('--filter_train', type=float, default=FILTER_TRAIN, help="Filter train set for cognacy, based on prediction results, and rerun")
-        parser.add_argument('--input_type', default=INPUT_TYPE, choices=["asjp", "ipa"])
-        parser.add_argument('--train_corpus', default=TRAIN_CORPUS, choices=["northeuralex", "ielex", "ielex-corr"])
-        parser.add_argument('--valtest_corpus', default=VALTEST_CORPUS, choices=["northeuralex", "ielex", "ielex-corr"])
-        parser.add_argument('--input_encoding', default=INPUT_ENCODING, choices=["phonetic", "character", "embedding"])
-        parser.add_argument('--validation', action='store_true', default=VALIDATION, help="test on validation set instead of test set")
-        
-        # Neural network options
-        parser.add_argument('--hidden', type=int, default=N_HIDDEN)
-        parser.add_argument('--units_phyl', type=int, default=N_UNITS_PHYL)
-        parser.add_argument('--batch_size', type=int, default=BATCH_SIZE)
-        parser.add_argument('--learning_rate', type=float, default=LEARNING_RATE)
-        parser.add_argument('--lr_decay', type=float, default=LEARNING_RATE_DECAY)
-        parser.add_argument('--adaptive_lr', type=float, default=ADAPTIVE_LR)
-        parser.add_argument('--reg_weight', type=float, default=REG_WEIGHT)
-        parser.add_argument('--grad_clip', type=float, default=GRAD_CLIP)
-        parser.add_argument('--n_epochs', type=int, default=N_EPOCHS)
-        parser.add_argument('--layers_encoder', type=int, default=N_LAYERS_ENCODER)
-        parser.add_argument('--layers_decoder', type=int, default=N_LAYERS_DECODER)
-        parser.add_argument('--layers_dense', type=int, default=N_LAYERS_DENSE)
-        parser.add_argument('--dropout', type=float, default=DROPOUT)
-        parser.add_argument('--optimizer', default=OPTIMIZER, choices=["adagrad", "adam", "sgd"])
-        parser.add_argument('--no_bidirectional_encoder', action='store_true', default=not BIDIRECTIONAL_ENCODER)
-        parser.add_argument('--bidirectional_decoder', action='store_true', default=BIDIRECTIONAL_DECODER)
-        parser.add_argument('--encoder_all_steps', action='store_true', default=ENCODER_ALL_STEPS)
-        parser.add_argument('--init', default=INITIALIZATION, choices=["constant", "xavier_normal", "xavier_uniform"])
-        parser.add_argument('--gated_layer_type', default=GATED_LAYER_TYPE, choices=["lstm", "gru"])
-        parser.add_argument('--mean_subtraction', action='store_true', default=MEAN_SUBTRACTION)
-        parser.add_argument('--no_standardization', action='store_true', default=NO_STANDARDIZATION)
-        parser.add_argument('--cognacy_prior', type=float, default=COGNACY_PRIOR)
-        parser.add_argument('--export_weights', action='store_true', default=EXPORT_WEIGHTS)
-        parser.add_argument('--train_proto', action='store_true', default=TRAIN_PROTO)
-        FLAGS, unparsed = parser.parse_known_args()
         
         if FLAGS.lang_family is not "none":
             FLAGS.languages = LANG_FAMILIES_DICT[FLAGS.lang_family]
-        print_flags(FLAGS)
         main()
