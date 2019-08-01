@@ -26,7 +26,6 @@ from lingpy.sequence.sound_classes import ipa2tokens, asjp2tokens
 import numpy as np
 import os
 import pandas as pd
-import random
 from scipy.spatial.distance import euclidean, cosine, sqeuclidean, canberra, cityblock, correlation, chebyshev
 import sys
 import igraph
@@ -36,8 +35,114 @@ import igraph
 # import igraph
 PROBLEM_LANGUAGES = ["IE.Indic.Bengali", "IE.Iranian.Ossetic", "IE.Iranian.Pashto"]  # , "IE.Albanian.Albanian", "IE.Baltic.Lithuanian", "IE.Celtic.Welsh", "IE.Germanic.Danish", "IE.Germanic.English", "IE.Germanic.Norwegian", "IE.Germanic.Swedish", "IE.Greek.Greek"]
 
-random.seed(10)
     
+def load_data(corpus_name):
+    # Set variables for train corpus
+    if config["train_corpus"] == "northeuralex":
+        input_path_train = "data/northeuralex-0.9-lingpy.tsv"
+    elif config["train_corpus"] == "ielex" or config["train_corpus"] == "ielex-corr":
+        input_path_train = "data/ielex-4-26-2016.csv"
+    tsv_path_train = config["train_corpus"] + "-" + config["input_type"]
+    tsv_cognates_path_train = tsv_path_train + "-cognates"
+    
+    # Set variables for val/test corpus
+    if config["valtest_corpus"] == "northeuralex":
+        input_path_valtest = "data/northeuralex-0.9-lingpy.tsv"
+    elif config["valtest_corpus"] == "ielex" or config["valtest_corpus"] == "ielex-corr":
+        input_path_valtest = "data/ielex-4-26-2016.csv"
+    tsv_path_valtest = config["valtest_corpus"] + "-" + config["input_type"]
+    tsv_cognates_path_valtest = tsv_path_valtest + "-cognates"
+    
+    intersection_path = "data/ielex-northeuralex-0.9-intersection.tsv"
+    
+    distances_path = utility.get_distances_path(config["results_dir"], options)
+    baselines_path = utility.get_baselines_path(config["results_dir"], options)
+
+
+    if "all" in config["languages"]:
+        print("Get all langs")
+        config["languages"] = data.get_all_languages(input_path_train, config["train_corpus"])
+    
+    print("Generating all language pairs...")
+    feature_matrix_phon = None
+    if config["input_encoding"] == "phonetic" or config["visualize_weights"] or config["visualize_encoding"]:
+        feature_matrix_phon = data.load_feature_file(config["feature_file"])
+    perms = False
+    if len(config["languages"]) > 2:
+        perms = True
+    lang_pairs = utility.generate_pairs(config["languages"], allow_permutations=perms, sample=config["sample_lang_pairs"])
+    
+    print("Training corpus:")
+    print(" - Convert wordlists to tsv format, and tokenize words.")
+    data.convert_wordlist_tsv(input_path_train, source=config["train_corpus"], input_type=config["input_type"], output_path=tsv_path_train + ".tsv", intersection_path=intersection_path)
+    print(" - Detect cognates in entire dataset using LexStat.")
+    cd.cognate_detection_lexstat(tsv_path_train, tsv_cognates_path_train, input_type=config["input_type"])
+    
+    print("Validation/test corpus:")
+    print(" - Convert wordlists to tsv format, and tokenize words.")
+    data.convert_wordlist_tsv(input_path_valtest, source=config["valtest_corpus"], input_type=config["input_type"], output_path=tsv_path_valtest + ".tsv", intersection_path=intersection_path)
+    print(" - Fetch list of concepts (only for valtest corpus)")
+    concepts_valtest = data.fetch_concepts(input_path_valtest, source=config["valtest_corpus"])
+    print(" - Detect cognates in entire dataset using LexStat.")
+    cd.cognate_detection_lexstat(tsv_path_valtest, tsv_cognates_path_valtest, input_type=config["input_type"])
+    
+    excluded_concepts_training = []
+    if config["train_corpus"] != config["valtest_corpus"]:
+        print("Loading IElex->NorthEuraLex concept mapping...")
+        ielex_nelex_map = data.load_ielex_nelex_concept_mapping("data/ielex-nelex-mapping.csv")
+        # All concepts in the validation/test corpus should be excluded from the training corpus
+        for concept in concepts_valtest:
+            if concept in ielex_nelex_map:
+                concept_nelex = ielex_nelex_map[concept]
+                excluded_concepts_training.append(concept_nelex)
+    
+    # Language-pair specific variables: every dict entry is designated for a specific lang pair
+    results_path = {}
+    subs_sp_path = {}
+    subs_st_path = {}
+    context_vectors_path = {}
+    
+    train = {}
+    val = {}
+    test = {}
+    conversion_key = {}
+    features_lp = {}
+    
+    # Max_len saved per language, rather than per language pair
+    max_len = {}
+
+    features = [pd.DataFrame(), pd.DataFrame()]
+    voc_size = [0, 0]
+    voc_size_general = [0, 0]
+    
+    if config["phyl"]:
+        # For phylogenetic word prediction, create one feature matrix for all languages
+        print("Create feature matrix for all language pairs.")
+        used_tokens = [[], []]
+        tokens_set = [[], []]
+        for lang_pair in lang_pairs:
+            # For phylogenetic word prediction, create one feature matrix for all languages
+            features_lp[lang_pair], max_len[lang_pair[0]], max_len[lang_pair[1]], _, _ = data.get_corpus_info([tsv_cognates_path_train + ".tsv", tsv_cognates_path_valtest + ".tsv"], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], feature_matrix_phon=feature_matrix_phon)
+            used_tokens[0] += list(features_lp[lang_pair][0].index)
+            used_tokens[1] += list(features_lp[lang_pair][1].index)
+        
+        tokens_set[0] = list(set(used_tokens[0]))
+        tokens_set[1] = list(set(used_tokens[1]))
+        if config["input_encoding"] == "character":
+            features[0] = data.create_one_hot_matrix(tokens_set[0])
+        elif config["input_encoding"] == "phonetic":
+            features[0] = feature_matrix_phon.loc[tokens_set[0]]
+        else:
+            print("Embedding encoding not possible in phylogenetic tree prediction.")
+            return
+        # Output encoding is always character
+        features[1] = data.create_one_hot_matrix(tokens_set[1])
+        voc_size_general[0] = features[0].shape[1]
+        voc_size_general[1] = features[1].shape[1]
+        conversion_key_general = data.create_conversion_key(features)
+        plot_path_phyl = utility.create_path(config["results_dir"], options, prefix="plot_")
+
+    return intersection_path, distances_path, baselines_path
 
 def get_all_languages(data_file, source_type):
     if source_type == "ielex" or source_type == "ielex-corr":

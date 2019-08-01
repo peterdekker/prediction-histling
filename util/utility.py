@@ -31,7 +31,6 @@ sounds = ['!', '3', '4', '5', '7', '8', 'C', 'E', 'G',
           'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
           'v', 'w', 'x', 'y', 'z']
 
-
 def find(f, seq):
     """Return first item in sequence where f(item) == True."""
     for item in seq:

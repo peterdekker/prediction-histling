@@ -118,3 +118,8 @@ config = {
 
 if config["lang_family"] is not "none":
     config["languages"] = LANG_FAMILIES_DICT[config["lang_family"]]
+
+# Set batch size to 1 for weight visualization:
+# we want to feed individual words through the network
+if config["export_weights"]:
+    config["batch_size"] = 1

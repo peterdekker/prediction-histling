@@ -1,19 +1,66 @@
-# wordprediction: Use neural networks to reconstruct language ancestry
+# Word prediction in historical linguistics
+This is a Jupyter notebook and Python library to demonstrate the use of word prediction using deep learning as an aid in historical linguistics.
 
 ## Installation
-This program should be executed with Python 3. Install python3 and python3-igraph on your computer, and the development headers for libxml2 (libxml2-dev in Ubuntu).
+### Linux/Mac
 
-Now, install the Python dependencies
-First, create a virtual environement, and activate it
-```
-python3 -m venv env
-source env/bin/activate
-```
+* Chaining search is a Jupyter notebook, which depends on Python 3, pip (PyPi) and venv. Please first install Python 3, pip and libxml2 development hearders via your package management system. E.g. for Ubuntu:
+ ```
+ sudo apt install python3-pip python3-venv libxml2-dev
+ ```
 
-Then, install the dependencies:
-```
-pip3 install -r requirements.txt
-```
+* Now, run our install script in a terminal, as a normal user (without `sudo`):
+   ```
+   ./install.sh
+   ```
+   If permission is denied, issue the following command once:
+   ```
+   sudo chmod +x install.sh
+   ```
+   and then run the install script.
+
+* Every time you want to run the notebook, run the `run.sh` script as a normal user (without `sudo`):
+   ```
+   ./run.sh
+   ```
+   A browser window will open. Now, click `Sandbox.ipynb`. The first time you use it, pick the kernel `env` from menu `Kernel > Change kernel > env`.
+
+
+### Windows
+
+Chaining search can be easily installed using our install script. This will install all prerequisites for Chaining search.
+
+* Open a command prompt (Windows key + R, then issue "cmd").
+* Change to the Chaining search directory (the directory where this README is located):
+ ```
+ cd CHAINING\SEARCH\DIRECTORY
+ ```
+* If you don't have Python yet, install it now:
+ ```
+ python_install.bat
+ ```
+* Close the command prompt after this (required!)
+
+Now we're ready to install our notebook:
+* Open a command prompt (again: Windows key + R, then type "cmd").
+* Change to the Chaining search directory (the directory where this README is located): 
+* Invoke the install script:
+ ```
+ install.bat
+ ```
+
+Every time you would like to run chaining search, invoke our run script:
+
+* Open a command prompt (Windows key + R, then issue `cmd`).
+* Change to the Chaining search directory (the directory where this README is located):
+ ```
+ cd CHAINING\SEARCH\DIRECTORY
+ ```
+* Invoke the run script:
+ ```
+ run.bat
+ ```
+* A browser window will open. Now, click `Sandbox.ipynb`. The first time you use it, pick the kernel `env` from menu `Kernel > Change kernel > env`.
 
 ## General workflow
 Execute python3 pipeline.py
