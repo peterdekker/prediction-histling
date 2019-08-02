@@ -142,7 +142,7 @@ def load_data(corpus_name):
         conversion_key_general = data.create_conversion_key(features)
         plot_path_phyl = utility.create_path(config["results_dir"], options, prefix="plot_")
 
-    return intersection_path, distances_path, baselines_path
+    return intersection_path, distances_path, baselines_path, lang_pairs
 
 def get_all_languages(data_file, source_type):
     if source_type == "ielex" or source_type == "ielex-corr":
