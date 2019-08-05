@@ -36,58 +36,53 @@ import igraph
 PROBLEM_LANGUAGES = ["IE.Indic.Bengali", "IE.Iranian.Ossetic", "IE.Iranian.Pashto"]  # , "IE.Albanian.Albanian", "IE.Baltic.Lithuanian", "IE.Celtic.Welsh", "IE.Germanic.Danish", "IE.Germanic.English", "IE.Germanic.Norwegian", "IE.Germanic.Swedish", "IE.Greek.Greek"]
 
     
-def load_data(corpus_name):
+def load_data(train_corpus, languages, intersection_path):
     # Set variables for train corpus
-    if config["train_corpus"] == "northeuralex":
+    if train_corpus == "northeuralex":
         input_path_train = "data/northeuralex-0.9-lingpy.tsv"
-    elif config["train_corpus"] == "ielex" or config["train_corpus"] == "ielex-corr":
+    elif train_corpus == "ielex" or train_corpus == "ielex-corr":
         input_path_train = "data/ielex-4-26-2016.csv"
-    tsv_path_train = config["train_corpus"] + "-" + config["input_type"]
+    tsv_path_train = train_corpus + "-" + config["input_type"]
     tsv_cognates_path_train = tsv_path_train + "-cognates"
     
     # Set variables for val/test corpus
-    if config["valtest_corpus"] == "northeuralex":
+    if valtest_corpus == "northeuralex":
         input_path_valtest = "data/northeuralex-0.9-lingpy.tsv"
-    elif config["valtest_corpus"] == "ielex" or config["valtest_corpus"] == "ielex-corr":
+    elif valtest_corpus == "ielex" or valtest_corpus == "ielex-corr":
         input_path_valtest = "data/ielex-4-26-2016.csv"
-    tsv_path_valtest = config["valtest_corpus"] + "-" + config["input_type"]
+    tsv_path_valtest = valtest_corpus + "-" + config["input_type"]
     tsv_cognates_path_valtest = tsv_path_valtest + "-cognates"
-    
-    intersection_path = "data/ielex-northeuralex-0.9-intersection.tsv"
-    
-    distances_path = utility.get_distances_path(config["results_dir"], options)
-    baselines_path = utility.get_baselines_path(config["results_dir"], options)
 
 
-    if "all" in config["languages"]:
+    if "all" in languages:
         print("Get all langs")
-        config["languages"] = data.get_all_languages(input_path_train, config["train_corpus"])
+        languages = data.get_all_languages(input_path_train, config["train_corpus"])
     
     print("Generating all language pairs...")
     feature_matrix_phon = None
     if config["input_encoding"] == "phonetic" or config["visualize_weights"] or config["visualize_encoding"]:
         feature_matrix_phon = data.load_feature_file(config["feature_file"])
     perms = False
-    if len(config["languages"]) > 2:
+    if len(languages) > 2:
         perms = True
-    lang_pairs = utility.generate_pairs(config["languages"], allow_permutations=perms, sample=config["sample_lang_pairs"])
+    lang_pairs = utility.generate_pairs(languages, allow_permutations=perms, sample=config["sample_lang_pairs"])
     
     print("Training corpus:")
     print(" - Convert wordlists to tsv format, and tokenize words.")
-    data.convert_wordlist_tsv(input_path_train, source=config["train_corpus"], input_type=config["input_type"], output_path=tsv_path_train + ".tsv", intersection_path=intersection_path)
+    data.convert_wordlist_tsv(input_path_train, source=train_corpus, input_type=config["input_type"], output_path=tsv_path_train + ".tsv", intersection_path=intersection_path)
     print(" - Detect cognates in entire dataset using LexStat.")
     cd.cognate_detection_lexstat(tsv_path_train, tsv_cognates_path_train, input_type=config["input_type"])
     
     print("Validation/test corpus:")
     print(" - Convert wordlists to tsv format, and tokenize words.")
-    data.convert_wordlist_tsv(input_path_valtest, source=config["valtest_corpus"], input_type=config["input_type"], output_path=tsv_path_valtest + ".tsv", intersection_path=intersection_path)
+    data.convert_wordlist_tsv(input_path_valtest, source=valtest_corpus, input_type=config["input_type"], output_path=tsv_path_valtest + ".tsv", intersection_path=intersection_path)
     print(" - Fetch list of concepts (only for valtest corpus)")
-    concepts_valtest = data.fetch_concepts(input_path_valtest, source=config["valtest_corpus"])
+    concepts_valtest = data.fetch_concepts(input_path_valtest, source=valtest_corpus)
     print(" - Detect cognates in entire dataset using LexStat.")
     cd.cognate_detection_lexstat(tsv_path_valtest, tsv_cognates_path_valtest, input_type=config["input_type"])
     
     excluded_concepts_training = []
-    if config["train_corpus"] != config["valtest_corpus"]:
+    if train_corpus != valtest_corpus:
         print("Loading IElex->NorthEuraLex concept mapping...")
         ielex_nelex_map = data.load_ielex_nelex_concept_mapping("data/ielex-nelex-mapping.csv")
         # All concepts in the validation/test corpus should be excluded from the training corpus
@@ -101,48 +96,77 @@ def load_data(corpus_name):
     subs_sp_path = {}
     subs_st_path = {}
     context_vectors_path = {}
-    
+
     train = {}
     val = {}
     test = {}
     conversion_key = {}
     features_lp = {}
-    
     # Max_len saved per language, rather than per language pair
     max_len = {}
 
     features = [pd.DataFrame(), pd.DataFrame()]
     voc_size = [0, 0]
     voc_size_general = [0, 0]
-    
-    if config["phyl"]:
-        # For phylogenetic word prediction, create one feature matrix for all languages
-        print("Create feature matrix for all language pairs.")
-        used_tokens = [[], []]
-        tokens_set = [[], []]
-        for lang_pair in lang_pairs:
-            # For phylogenetic word prediction, create one feature matrix for all languages
-            features_lp[lang_pair], max_len[lang_pair[0]], max_len[lang_pair[1]], _, _ = data.get_corpus_info([tsv_cognates_path_train + ".tsv", tsv_cognates_path_valtest + ".tsv"], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], feature_matrix_phon=feature_matrix_phon)
-            used_tokens[0] += list(features_lp[lang_pair][0].index)
-            used_tokens[1] += list(features_lp[lang_pair][1].index)
-        
-        tokens_set[0] = list(set(used_tokens[0]))
-        tokens_set[1] = list(set(used_tokens[1]))
-        if config["input_encoding"] == "character":
-            features[0] = data.create_one_hot_matrix(tokens_set[0])
-        elif config["input_encoding"] == "phonetic":
-            features[0] = feature_matrix_phon.loc[tokens_set[0]]
-        else:
-            print("Embedding encoding not possible in phylogenetic tree prediction.")
-            return
-        # Output encoding is always character
-        features[1] = data.create_one_hot_matrix(tokens_set[1])
-        voc_size_general[0] = features[0].shape[1]
-        voc_size_general[1] = features[1].shape[1]
-        conversion_key_general = data.create_conversion_key(features)
-        plot_path_phyl = utility.create_path(config["results_dir"], options, prefix="plot_")
+    for lang_pair in lang_pairs:
+        lang_a, lang_b = lang_pair
+        context_vectors_path[lang_pair] = utility.create_path(config["results_dir"], options, prefix="context_vectors_", lang_a=lang_a, lang_b=lang_b)
+        # Create export path, containing all options
+        # This is used to output a prediction results file, which can then be used for visualization and cognate detection
+        results_path[lang_pair] = utility.get_results_path(lang_a, lang_b, config["results_dir"], options)
+        subs_st_path[lang_pair] = utility.create_path(config["results_dir"], options, prefix="subs_st_", lang_a=lang_a, lang_b=lang_b)
+        subs_sp_path[lang_pair] = utility.create_path(config["results_dir"], options, prefix="subs_sp_", lang_a=lang_a, lang_b=lang_b)
 
-    return intersection_path, distances_path, baselines_path, lang_pairs
+        # If data in pickle, load pickle
+        data_pickle = results_path[lang_pair] + "-data.p"
+        if os.path.exists(data_pickle):
+            with open(data_pickle, "rb") as f:
+                print("Loading train/val/test sets from pickle, nothing generated.")
+                train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1] = pickle.load(f)
+        else:
+            print("Create feature matrix for this specific language pair.")
+            features, max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1] = data.get_corpus_info([tsv_cognates_path_train + ".tsv", tsv_cognates_path_valtest + ".tsv"], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], feature_matrix_phon=feature_matrix_phon)
+            conversion_key[lang_pair] = data.create_conversion_key(features)
+
+            print("Convert training corpus TSV file to data matrix")
+            dataset_train, train_mean, train_std = data.create_data_matrix(tsv_path=tsv_cognates_path_train + ".tsv", lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config["batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], excluded_concepts=excluded_concepts_training, cognate_detection=config["cognate_detection"])
+
+            print("Convert val/test corpus TSV file to data matrix")
+            dataset_valtest, _, _ = data.create_data_matrix(tsv_path=tsv_cognates_path_valtest + ".tsv", lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config["batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], cognate_detection=config["cognate_detection"], valtest=True, train_mean=train_mean, train_std=train_std)
+
+            t_set_size = dataset_train.get_size()
+            vt_set_size = dataset_valtest.get_size()
+
+            if valtest_corpus == train_corpus:
+                # If train and valtest corpus the same, divide one corpus into parts
+                assert t_set_size == vt_set_size
+                n_train, n_val, n_test = dataset_train.compute_subset_sizes(t_set_size)
+            else:
+                # If train and valtest corpus different, use full train corpus as train and
+                # full valtest corpus for validation and testing
+                # TODO: In fact this is not needed, we can directly take set size.
+                n_train, _, _ = dataset_train.compute_subset_sizes(t_set_size, only_train=True)
+                _, n_val, n_test = dataset_valtest.compute_subset_sizes(vt_set_size, only_valtest=True)
+
+            print("Divide into training, validation and test set.")
+            # Even if train and valtest corpus are the same, we do this separately,
+            # because valtest corpus is filtered on cognates and train corpus is not
+            # Use train corpus only for train set
+            train[lang_pair], _, _ = dataset_train.divide_subsets(n_train, 0, 0)
+            # Use val/test corpus for validation and test set
+            _, val[lang_pair], test[lang_pair] = dataset_valtest.divide_subsets(0, n_val, n_test)
+
+            print("Filter val/test sets on cognates.")
+            # Use only cognate pairs for validation and test
+            val[lang_pair] = val[lang_pair].filter_cognates()
+            test[lang_pair] = test[lang_pair].filter_cognates()
+            print("Val/test sizes after cognate filtering: " + str(val[lang_pair].get_size()) + "|" + str(test[lang_pair].get_size()))
+
+            # Pickle train/val/test/sets
+            with open(data_pickle, "wb") as f:
+                pickle.dump((train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1]), f)
+
+    return results_path, lang_pairs, train, val, test, max_len, conversion_key, voc_size
 
 def get_all_languages(data_file, source_type):
     if source_type == "ielex" or source_type == "ielex-corr":

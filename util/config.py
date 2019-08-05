@@ -47,21 +47,14 @@ ADAPTIVE_LR = 0.0
 COGNACY_PRIOR = 1.0
 FILTER_TRAIN = 1.0
 EXPORT_WEIGHTS = False
-TRAIN_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
-VALTEST_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
+#TRAIN_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
+#VALTEST_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
 TRAIN_PROTO = False
 
 # ## Other arguments
 RESULTS_DIR = "output"
 FEATURE_FILE = "data/asjp_phonetic_features_new.tsv"
-LANGUAGES = ["nld", "deu"]
-LANG_FAMILY = "none" # choices=["none", "slav", "ger"]
 SAMPLE_LANG_PAIRS = None
-
-LANG_FAMILIES_DICT = {
-"slav": ["ces", "bul", "rus", "bel", "ukr", "pol", "slk", "slv", "hrv"],
-"ger": ["swe", "isl", "eng", "nld", "deu", "dan", "nor"]
-}
 
 config = {
             "n_hidden": N_HIDDEN,
@@ -106,18 +99,13 @@ config = {
             "cognacy_prior": COGNACY_PRIOR,
             "filter_train": FILTER_TRAIN,
             "export_weights": EXPORT_WEIGHTS,
-            "train_corpus": TRAIN_CORPUS,
-            "valtest_corpus": VALTEST_CORPUS,
+            #"train_corpus": TRAIN_CORPUS,
+            #"valtest_corpus": VALTEST_CORPUS,
             "train_proto": TRAIN_PROTO,
             "results_dir": RESULTS_DIR,
             "feature_file": FEATURE_FILE,
-            "languages": LANGUAGES,
-            "lang_family": LANG_FAMILY,
             "sample_lang_pairs": SAMPLE_LANG_PAIRS,
             }
-
-if config["lang_family"] is not "none":
-    config["languages"] = LANG_FAMILIES_DICT[config["lang_family"]]
 
 # Set batch size to 1 for weight visualization:
 # we want to feed individual words through the network
