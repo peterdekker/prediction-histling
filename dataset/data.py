@@ -223,29 +223,27 @@ def load_dataset(input_path, source, input_type, output_path, intersection_path=
         df.rename(columns={"Language":"DOCULECT", "Meaning":"CONCEPT", "Phonological Form": "IPA", "Cognate Class":"COGNATES_IELEX", "cc": "CONCEPT_COGNATES_IELEX"}, inplace=True)
         # Drop column with unused numbers
         df.drop(df.columns[[0]], axis=1, inplace=True)
-    # elif source == "northeuralex":
+    #elif source == "northeuralex":
     #     df.drop("ID", axis=1, inplace=True)
-    else:
-        raise ValueError("Unknown file format.")
+
     tokens = []
     if source=="ielex":
-        if input_type == "asjp":
-            # Perform IPA->ASJP conversion if source is ielex
-            forms = []
-            for form_ipa in df["IPA"]:
-                # ipa_to_asjp method accepts both space-separated (NELex) and
-                # non-separated (IELex)
+        # Perform IPA->ASJP conversion if source is ielex
+        forms = []
+        for form_ipa in df["IPA"]:
+            # ipa_to_asjp method accepts both space-separated (NELex) and
+            # non-separated (IELex)
+            if input_type=="asjp":
                 form_asjp = utility.ipa_to_asjp(form_ipa)
-                # Add to columns
                 forms.append(form_asjp)
-            df["ASJP"] = forms
-        elif input_type == "ipa":
-            for form_ipa in df["IPA"]:
+                tokens_form = list(form_asjp)
+            elif input_type=="ipa"
                 tokens_form = ipa2tokens(form_ipa)
-                tokens_string = " ".join(tokens_form)
-                # Add to columns
-                tokens.append(tokens_string)
-            df["TOKENS"] = tokens
+            tokens_string = " ".join(tokens_form)
+            tokens.append(tokens_string)
+        if input_type=="asjp":
+            df["ASJP"] = forms
+        df["TOKENS"] = tokens
     elif source=="northeuralex":
         if input_type=="asjp":
             for form_ipa in df["ASJP"]:
