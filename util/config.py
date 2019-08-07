@@ -56,6 +56,12 @@ RESULTS_DIR = "output"
 FEATURE_FILE = "data/asjp_phonetic_features_new.tsv"
 SAMPLE_LANG_PAIRS = None
 
+DATA_PATH = {"northeuralex": "data/northeuralex-cldf.csv",
+             "ielex": "data/ielex-4-26-2016.csv"}
+
+DATA_URL = {"northeuralex": "http://www.northeuralex.org/static/downloads/northeuralex-cldf.csv",
+            "ielex": "TEST"}
+
 config = {
             "n_hidden": N_HIDDEN,
             "n_units_phyl": N_UNITS_PHYL,
@@ -105,6 +111,8 @@ config = {
             "results_dir": RESULTS_DIR,
             "feature_file": FEATURE_FILE,
             "sample_lang_pairs": SAMPLE_LANG_PAIRS,
+            "data_url": DATA_URL,
+            "data_path" : DATA_PATH,
             }
 
 # Set batch size to 1 for weight visualization:

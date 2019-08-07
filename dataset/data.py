@@ -27,38 +27,54 @@ import itertools
 from lingpy.sequence.sound_classes import ipa2tokens, asjp2tokens
 import numpy as np
 import os
+import requests
 import pandas as pd
 from scipy.spatial.distance import euclidean, cosine, sqeuclidean, canberra, cityblock, correlation, chebyshev
 import sys
 import igraph
 import pickle
+import pathlib
 
 
 
 # import igraph
 PROBLEM_LANGUAGES = ["IE.Indic.Bengali", "IE.Iranian.Ossetic", "IE.Iranian.Pashto"]  # , "IE.Albanian.Albanian", "IE.Baltic.Lithuanian", "IE.Celtic.Welsh", "IE.Germanic.Danish", "IE.Germanic.English", "IE.Germanic.Norwegian", "IE.Germanic.Swedish", "IE.Greek.Greek"]
 
-    
+
+def download_if_needed(file_path, url):
+    if not os.path.exists(file_path):
+        # Create parent dirs
+        p = pathlib.Path(file_path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(file_path, 'wb') as f:
+            print(f"Downloading dataset from {url}")
+            r = requests.get(url, allow_redirects=True)
+            # Write downloaded content to file
+            f.write(r.content)
+        
+
+
+
 def load_data(train_corpus, valtest_corpus, languages, intersection_path, input_type, options):
     # Set variables for train corpus
-    if train_corpus == "northeuralex":
-        input_path_train = "data/northeuralex-0.9-lingpy.tsv"
-    elif train_corpus == "ielex" or train_corpus == "ielex-corr":
-        input_path_train = "data/ielex-4-26-2016.csv"
-    tsv_path_train = train_corpus + "-" + input_type
-    tsv_cognates_path_train = tsv_path_train + "-cognates"
+    input_path_train = config["data_path"][train_corpus] # TODO: does not work yet for ielex-corr
+    url_train = config["data_url"][train_corpus]
+    tsv_path_train = f"{train_corpus}-{input_type}"
+    tsv_cognates_path_train = f"{tsv_path_train}-cognates"
+    # Download train corpus, if needed
+    download_if_needed(input_path_train, url_train)
     
     # Set variables for val/test corpus
-    if valtest_corpus == "northeuralex":
-        input_path_valtest = "data/northeuralex-0.9-lingpy.tsv"
-    elif valtest_corpus == "ielex" or valtest_corpus == "ielex-corr":
-        input_path_valtest = "data/ielex-4-26-2016.csv"
-    tsv_path_valtest = valtest_corpus + "-" + input_type
-    tsv_cognates_path_valtest = tsv_path_valtest + "-cognates"
+    input_path_valtest = config["data_path"][valtest_corpus] # TODO: does not work yet for ielex-corr
+    url_valtest = config["data_url"][valtest_corpus]
+    tsv_path_valtest = f"{valtest_corpus}-{input_type}"
+    tsv_cognates_path_valtest = f"{tsv_path_valtest}-cognates"
+    # Download train corpus, if needed
+    download_if_needed(input_path_valtest, url_valtest)
 
 
     if "all" in languages:
-        print("Get all langs")
+        print("Retrieve all languages from dataset")
         languages = get_all_languages(input_path_train, train_corpus)
     
     print("Generating all language pairs...")
@@ -72,13 +88,13 @@ def load_data(train_corpus, valtest_corpus, languages, intersection_path, input_
     
     print("Training corpus:")
     print(" - Convert wordlists to tsv format, and tokenize words.")
-    convert_wordlist_tsv(input_path_train, source=train_corpus, input_type=input_type, output_path=tsv_path_train + ".tsv", intersection_path=intersection_path)
+    load_dataset(input_path_train, source=train_corpus, input_type=input_type, output_path=tsv_path_train + ".tsv", intersection_path=intersection_path)
     print(" - Detect cognates in entire dataset using LexStat.")
     cd.cognate_detection_lexstat(tsv_path_train, tsv_cognates_path_train, input_type=input_type)
     
     print("Validation/test corpus:")
     print(" - Convert wordlists to tsv format, and tokenize words.")
-    convert_wordlist_tsv(input_path_valtest, source=valtest_corpus, input_type=input_type, output_path=tsv_path_valtest + ".tsv", intersection_path=intersection_path)
+    load_dataset(input_path_valtest, source=valtest_corpus, input_type=input_type, output_path=tsv_path_valtest + ".tsv", intersection_path=intersection_path)
     print(" - Fetch list of concepts (only for valtest corpus)")
     concepts_valtest = fetch_concepts(input_path_valtest, source=valtest_corpus)
     print(" - Detect cognates in entire dataset using LexStat.")
@@ -195,7 +211,7 @@ def load_feature_file(feature_file):
     return features
 
 
-def convert_wordlist_tsv(input_path, source, input_type, output_path, intersection_path=None):
+def load_dataset(input_path, source, input_type, output_path, intersection_path=None):
     if os.path.exists(output_path):
         print("Using existing wordlist file, nothing is generated.")
         return
@@ -207,36 +223,38 @@ def convert_wordlist_tsv(input_path, source, input_type, output_path, intersecti
         df.rename(columns={"Language":"DOCULECT", "Meaning":"CONCEPT", "Phonological Form": "IPA", "Cognate Class":"COGNATES_IELEX", "cc": "CONCEPT_COGNATES_IELEX"}, inplace=True)
         # Drop column with unused numbers
         df.drop(df.columns[[0]], axis=1, inplace=True)
-    elif source == "northeuralex":
-        df.drop("ID", axis=1, inplace=True)
+    # elif source == "northeuralex":
+    #     df.drop("ID", axis=1, inplace=True)
     else:
         raise ValueError("Unknown file format.")
     tokens = []
-    if input_type == "asjp":
-        # Convert to ASJP, because input file is IPA
-        forms = []
-        for form_ipa in df["IPA"]:
-            # ipa_to_asjp method accepts both space-separated (NELex) and
-            # non-separated (IELex)
-            form_asjp = utility.ipa_to_asjp(form_ipa)
-            tokens_form = list(form_asjp)
-            # tokens_set.update(tokens_form)
-            tokens_string = " ".join(tokens_form)
-            # Add to columns
-            forms.append(form_asjp)
-            tokens.append(tokens_string)
-        df["IPA"] = forms
-    elif input_type == "ipa":
-        for form_ipa in df["IPA"]:
-            # In NorthEuraLex file, tokens are already separated by spaces
-            if source == "northeuralex":
-                tokens_form = form_ipa.split()
-            # In IELex, we need a tokenization method
-            else:
+    if source=="ielex":
+        if input_type == "asjp":
+            # Perform IPA->ASJP conversion if source is ielex
+            forms = []
+            for form_ipa in df["IPA"]:
+                # ipa_to_asjp method accepts both space-separated (NELex) and
+                # non-separated (IELex)
+                form_asjp = utility.ipa_to_asjp(form_ipa)
+                # Add to columns
+                forms.append(form_asjp)
+            df["ASJP"] = forms
+        elif input_type == "ipa":
+            for form_ipa in df["IPA"]:
                 tokens_form = ipa2tokens(form_ipa)
-            # Add to columns
-            tokens.append(tokens_form)
-    df["TOKENS"] = tokens
+                tokens_string = " ".join(tokens_form)
+                # Add to columns
+                tokens.append(tokens_string)
+            df["TOKENS"] = tokens
+    elif source=="northeuralex":
+        if input_type=="asjp":
+            for form_ipa in df["ASJP"]:
+                tokens_form = list(form_asjp)
+                tokens_string = " ".join(tokens_form)
+                tokens.append(tokens_string)
+            df["TOKENS"] = tokens
+        elif input_type=="ipa":
+            df["TOKENS"]=df[input_type]
     # Filter out rows with XXX phonology field. Is this right???
     df = df[df["IPA"] != "XXX"]
     # Filter out rows with empty phonology field
