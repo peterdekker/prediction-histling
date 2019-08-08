@@ -21,7 +21,7 @@ pip3 install -r requirements.txt
 rm -rf ~/.local/share/jupyter/kernels/env
 # Kernel is configured to work with the virtual environment
 python3 -m ipykernel install --user --name env
-
+# Copy .theanorc file, so gpu is used
 # Compile documentation
 #cd doc
 #make html
