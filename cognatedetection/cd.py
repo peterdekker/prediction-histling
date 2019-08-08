@@ -344,19 +344,25 @@ def evaluation(results_table, existing_eval_table=None, tune=None, lang_pair=Non
 
 
 # LexStat cognate detection on entire dataset
-def cognate_detection_lexstat(tsv_path, tsv_cognates_path, input_type):
-    if os.path.exists(tsv_cognates_path + ".tsv"):
-        print("Using existing cognates file, nothing is generated.")
+def cognate_detection_lexstat(output_path, output_cognates_path, input_type):
+    print(" - Detect cognates in entire dataset using LexStat.")
+    if os.path.exists(output_cognates_path):
+        print(f"Using existing cognates file {output_cognates_path}, nothing is generated.")
         return
-    print("Loading LexStat object from data")
-    lex = LexStat(tsv_path + ".tsv", model="sca")
+    print("Perform cognate classification, this can take a long time!")
+    # TODO: Columns are NorthEuraLex-specific (at least classes=list)
+    lex = LexStat(output_path,
+                  model="sca",
+                  segments="token",
+                  transcription=input_type,
+                  classes="list",
+                  langid="doculect")
     
-    print("Perform cognate classification.")
     lex.get_scorer(method="markov")
     lex.cluster(method="lexstat", threshold=0.6, ref="COGNATES_LEXSTAT")
     
-    print("Output cognates to file.")
-    lex.output('tsv', filename=tsv_cognates_path, ignore="all", prettify=False)
+    print(f"Output cognates to {output_cognates_path}.")
+    lex.output('tsv', filename=output_cognates_path, ignore="all", prettify=False)
 
     
 # Average F scores over all language pairs

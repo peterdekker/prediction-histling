@@ -4,9 +4,9 @@ This is a Jupyter notebook and Python library to demonstrate the use of word pre
 ## Installation
 ### Linux/Mac
 
-* Chaining search is a Jupyter notebook, which depends on Python 3, pip (PyPi) and venv. Please first install Python 3, pip and libxml2 development hearders via your package management system. E.g. for Ubuntu:
+* Chaining search is a Jupyter notebook, which depends on Python 3, pip (PyPi) and venv. Please first install Python 3, pip and development hearders for libxml2, libz and libopenblas via your package management system. E.g. for Ubuntu:
  ```
- sudo apt install python3-pip python3-venv libxml2-dev
+ sudo apt install python3-pip libxml2-dev libopenblas-dev libz-dev
  ```
 
 * Now, run our install script in a terminal, as a normal user (without `sudo`):

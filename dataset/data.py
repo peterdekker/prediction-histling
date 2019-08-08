@@ -55,20 +55,20 @@ def download_if_needed(file_path, url):
 
 
 
-def load_data(train_corpus, valtest_corpus, languages, intersection_path, input_type, options):
+def load_data(train_corpus, valtest_corpus, languages, input_type, options):
     # Set variables for train corpus
     input_path_train = config["data_path"][train_corpus] # TODO: does not work yet for ielex-corr
     url_train = config["data_url"][train_corpus]
-    tsv_path_train = f"{train_corpus}-{input_type}"
-    tsv_cognates_path_train = f"{tsv_path_train}-cognates"
+    output_path_train = os.path.join(config["results_dir"],f"{train_corpus}-{input_type}.tsv")
+    output_path_cognates_train = os.path.join(config["results_dir"],f"{train_corpus}-{input_type}-cognates.tsv")
     # Download train corpus, if needed
     download_if_needed(input_path_train, url_train)
     
     # Set variables for val/test corpus
     input_path_valtest = config["data_path"][valtest_corpus] # TODO: does not work yet for ielex-corr
     url_valtest = config["data_url"][valtest_corpus]
-    tsv_path_valtest = f"{valtest_corpus}-{input_type}"
-    tsv_cognates_path_valtest = f"{tsv_path_valtest}-cognates"
+    output_path_valtest = os.path.join(config["results_dir"],f"{valtest_corpus}-{input_type}.tsv")
+    output_path_cognates_valtest = os.path.join(config["results_dir"],f"{valtest_corpus}-{input_type}-cognates.tsv")
     # Download train corpus, if needed
     download_if_needed(input_path_valtest, url_valtest)
 
@@ -87,18 +87,13 @@ def load_data(train_corpus, valtest_corpus, languages, intersection_path, input_
     lang_pairs = utility.generate_pairs(languages, allow_permutations=perms, sample=config["sample_lang_pairs"])
     
     print("Training corpus:")
-    print(" - Convert wordlists to tsv format, and tokenize words.")
-    load_dataset(input_path_train, source=train_corpus, input_type=input_type, output_path=tsv_path_train + ".tsv", intersection_path=intersection_path)
-    print(" - Detect cognates in entire dataset using LexStat.")
-    cd.cognate_detection_lexstat(tsv_path_train, tsv_cognates_path_train, input_type=input_type)
+    load_dataset(input_path_train, source=train_corpus, input_type=input_type, output_path=output_path_train)
+    cd.cognate_detection_lexstat(output_path_train, output_path_cognates_train, input_type=input_type)
     
     print("Validation/test corpus:")
-    print(" - Convert wordlists to tsv format, and tokenize words.")
-    load_dataset(input_path_valtest, source=valtest_corpus, input_type=input_type, output_path=tsv_path_valtest + ".tsv", intersection_path=intersection_path)
-    print(" - Fetch list of concepts (only for valtest corpus)")
+    load_dataset(input_path_valtest, source=valtest_corpus, input_type=input_type, output_path=output_path_valtest)
     concepts_valtest = fetch_concepts(input_path_valtest, source=valtest_corpus)
-    print(" - Detect cognates in entire dataset using LexStat.")
-    cd.cognate_detection_lexstat(tsv_path_valtest, tsv_cognates_path_valtest, input_type=input_type)
+    cd.cognate_detection_lexstat(output_path_valtest, output_path_cognates_valtest, input_type=input_type)
     
     excluded_concepts_training = []
     if train_corpus != valtest_corpus:
@@ -144,14 +139,14 @@ def load_data(train_corpus, valtest_corpus, languages, intersection_path, input_
                 train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1] = pickle.load(f)
         else:
             print("Create feature matrix for this specific language pair.")
-            features, max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1] = get_corpus_info([tsv_cognates_path_train + ".tsv", tsv_cognates_path_valtest + ".tsv"], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], feature_matrix_phon=feature_matrix_phon)
+            features, max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1] = get_corpus_info([output_path_cognates_train, output_path_cognates_valtest], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], feature_matrix_phon=feature_matrix_phon)
             conversion_key[lang_pair] = create_conversion_key(features)
 
             print("Convert training corpus TSV file to data matrix")
-            dataset_train, train_mean, train_std = create_data_matrix(tsv_path=tsv_cognates_path_train + ".tsv", lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config["batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], excluded_concepts=excluded_concepts_training, cognate_detection=config["cognate_detection"])
+            dataset_train, train_mean, train_std = create_data_matrix(tsv_path=output_path_cognates_train, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config["batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], excluded_concepts=excluded_concepts_training, cognate_detection=config["cognate_detection"])
 
             print("Convert val/test corpus TSV file to data matrix")
-            dataset_valtest, _, _ = create_data_matrix(tsv_path=tsv_cognates_path_valtest + ".tsv", lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config["batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], cognate_detection=config["cognate_detection"], valtest=True, train_mean=train_mean, train_std=train_std)
+            dataset_valtest, _, _ = create_data_matrix(tsv_path=output_path_cognates_valtest, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config["batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], cognate_detection=config["cognate_detection"], valtest=True, train_mean=train_mean, train_std=train_std)
 
             t_set_size = dataset_train.get_size()
             vt_set_size = dataset_valtest.get_size()
@@ -211,11 +206,12 @@ def load_feature_file(feature_file):
     return features
 
 
-def load_dataset(input_path, source, input_type, output_path, intersection_path=None):
+def load_dataset(input_path, source, input_type, output_path):
+    print(" - Loading dataset and performing necessary conversion/tokenization.")
     if os.path.exists(output_path):
         print("Using existing wordlist file, nothing is generated.")
         return
-    df = pd.read_csv(input_path, sep="\t")
+    df = pd.read_csv(input_path, sep="\t",na_filter=False) # No NA filter: the word form 'nan' should not be interpreted as NaN :p
     
     # Depending on file format, remove and/or rename columns
     if source == "ielex" or source == "ielex-corr":
@@ -223,8 +219,8 @@ def load_dataset(input_path, source, input_type, output_path, intersection_path=
         df.rename(columns={"Language":"DOCULECT", "Meaning":"CONCEPT", "Phonological Form": "IPA", "Cognate Class":"COGNATES_IELEX", "cc": "CONCEPT_COGNATES_IELEX"}, inplace=True)
         # Drop column with unused numbers
         df.drop(df.columns[[0]], axis=1, inplace=True)
-    #elif source == "northeuralex":
-    #     df.drop("ID", axis=1, inplace=True)
+    elif source == "northeuralex":
+        df.rename(columns={"Language_ID":"DOCULECT", "Concept_ID":"CONCEPT"}, inplace=True)
 
     tokens = []
     if source=="ielex":
@@ -237,7 +233,7 @@ def load_dataset(input_path, source, input_type, output_path, intersection_path=
                 form_asjp = utility.ipa_to_asjp(form_ipa)
                 forms.append(form_asjp)
                 tokens_form = list(form_asjp)
-            elif input_type=="ipa"
+            elif input_type=="ipa":
                 tokens_form = ipa2tokens(form_ipa)
             tokens_string = " ".join(tokens_form)
             tokens.append(tokens_string)
@@ -246,7 +242,7 @@ def load_dataset(input_path, source, input_type, output_path, intersection_path=
         df["TOKENS"] = tokens
     elif source=="northeuralex":
         if input_type=="asjp":
-            for form_ipa in df["ASJP"]:
+            for form_asjp in df["ASJP"]:
                 tokens_form = list(form_asjp)
                 tokens_string = " ".join(tokens_form)
                 tokens.append(tokens_string)
@@ -259,26 +255,25 @@ def load_dataset(input_path, source, input_type, output_path, intersection_path=
     df = df[df["IPA"] != ""]
     
     # Apply IELex cognate judgments to NElex
-    if source == "northeuralex":
-        # Load intersection file
-        df_intersection = pd.read_csv(intersection_path, sep="\t")
-        # Per row, retrieve matching IELex judgment from intersection
-        cognates_intersection = []
-        for _, row in df.iterrows():
-            cog = df_intersection[((df_intersection["iso_code"] == row["DOCULECT"]) & (df_intersection["gloss_northeuralex"] == row["CONCEPT"]) & (df_intersection["ortho_northeuralex"] == row["COUNTERPART"]))]["cog_class_ielex"]
-            if cog.empty:
-                cog = None
-            else:
-                cog = cog.iloc[0]
-            cognates_intersection.append(cog)
-        df["COGNATES_IELEX"] = cognates_intersection
-        # Create CONCEPT_COGNATES_IELEX column with unique cognate classes across concepts
-        df["CONCEPT_COGNATES_IELEX"] = df["CONCEPT"] + "-" + df["COGNATES_IELEX"]
-        
-        # Put entries with cognate judgments at end of dataframe
-        # df_no_judgments = df[pd.isnull(df["COGNATES_IELEX"])]
-        # df_judgments = df.dropna() #Everything with judgments
-        # df = pd.concat([df_no_judgments,df_judgments])
+    # TODO: We can only do this if there is a publicly available intersection file
+    #
+    # if source == "northeuralex":
+    #     # Load intersection file
+    #     df_intersection = pd.read_csv(intersection_path, sep="\t")
+    #     # Per row, retrieve matching IELex judgment from intersection
+    #     cognates_intersection = []
+    #     for _, row in df.iterrows():
+    #         cog = df_intersection[((df_intersection["iso_code"] == row["DOCULECT"]) & (df_intersection["gloss_northeuralex"] == row["CONCEPT"]) & (df_intersection["ortho_northeuralex"] == row["COUNTERPART"]))]["cog_class_ielex"]
+    #         if cog.empty:
+    #             cog = None
+    #         else:
+    #             cog = cog.iloc[0]
+    #         cognates_intersection.append(cog)
+    #     df["COGNATES_IELEX"] = cognates_intersection
+    #     # Create CONCEPT_COGNATES_IELEX column with unique cognate classes across concepts
+    #     df["CONCEPT_COGNATES_IELEX"] = df["CONCEPT"] + "-" + df["COGNATES_IELEX"]
+    
+    print(f" - Writing corpus (with conversions) to {output_path}")
     df.to_csv(output_path, index_label="ID", sep="\t")
     
     # Add . to tokens list as end of word marker
@@ -287,6 +282,7 @@ def load_dataset(input_path, source, input_type, output_path, intersection_path=
 
 
 def fetch_concepts(input_path, source):
+    print(" - Fetch list of concepts (only for valtest corpus)")
     if source == "northeuralex":
         with open(input_path, "r") as input_file:
             concepts = input_file.readline().strip().split(",")[1:]
