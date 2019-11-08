@@ -5,9 +5,9 @@
 pip3 install --user virtualenv
 export PATH=$PATH:~/.local/bin
 # Create virtual environment
-python3 -m venv env
+python3 -m venv ph-env
 # Activate virtual environment
-source env/bin/activate
+source ph-env/bin/activate
 # All required packages are instlled via pip in the virtual environment
 #First, install some packages separately, they are needed for building the rest
 pip3 install wheel cython numpy
@@ -18,9 +18,9 @@ pip3 install -r requirements.txt
 # Collapsible headings extension is enabled
 #jupyter nbextension enable collapsible_headings/main
 # Remove (possibly) existing Jupyter kernel with name env
-rm -rf ~/.local/share/jupyter/kernels/env
+rm -rf ~/.local/share/jupyter/kernels/ph-env
 # Kernel is configured to work with the virtual environment
-python3 -m ipykernel install --user --name env
+python3 -m ipykernel install --user --name ph-env
 # Copy .theanorc file, so gpu is used
 # Compile documentation
 #cd doc

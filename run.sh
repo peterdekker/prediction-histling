@@ -1,2 +1,2 @@
-source env/bin/activate
+source ph-env/bin/activate
 jupyter notebook

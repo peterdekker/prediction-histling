@@ -10,26 +10,26 @@ echo Create the virtual environment
 
 pip install --user virtualenv
 
-virtualenv env
+virtualenv ph-env
 
 
 
 echo Activate the virtual environment
 
-call .\env\Scripts\activate.bat
+call .\ph-env\Scripts\activate.bat
 
 
 echo Install dependencies
 
 pip install ipykernel
-ipython kernel install --user --name=env
+ipython kernel install --user --name=ph-env
 pip install -r requirements.txt
 pip uninstall -y tornado
 pip install tornado==5.1.1
 jupyter contrib nbextension install --sys-prefix
 jupyter nbextensions_configurator enable --sys-prefix
 jupyter nbextension enable collapsible_headings/main
-python -m ipykernel install --user --name env  /quiet
+python -m ipykernel install --user --name ph-env  /quiet
 
 
 rem fix for temporary issue:
