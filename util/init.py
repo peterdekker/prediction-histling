@@ -10,6 +10,7 @@ import random
 random.seed(10)
 
 def initialize_program():
+    print("Initializing program...")
     # Set LingPy input encoding (IPA or ASJP)
     lingpy.settings.rc(schema=config["input_type"])
     

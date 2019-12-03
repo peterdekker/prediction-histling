@@ -109,6 +109,9 @@ def create_option_string(config):
                 if key not in omit:
                     filename += key_short + "."
         elif isinstance(value, str):
+            # The dataset values can be paths, we only want the last part
+            if '/' in value:
+                value = value.split("/")[-1]
             filename += shorten(value, length=5) + "."
         elif isinstance(value, float) or isinstance(value, int):
             if value > 0.0:

@@ -43,6 +43,7 @@ PROBLEM_LANGUAGES = ["IE.Indic.Bengali", "IE.Iranian.Ossetic", "IE.Iranian.Pasht
 
 def download_if_needed(file_path, url):
     if not os.path.exists(file_path):
+        print(f"Downloading file {url}...")
         # Create parent dirs
         p = pathlib.Path(file_path)
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -64,17 +65,21 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
     # Download train corpus, if needed
     download_if_needed(input_path_train, url_train)
     
-    # Set variables for val/test corpus
-    input_path_valtest = config["data_path"][valtest_corpus] # TODO: does not work yet for ielex-corr
-    url_valtest = config["data_url"][valtest_corpus]
-    output_path_valtest = os.path.join(config["results_dir"],f"{valtest_corpus}-{input_type}.tsv")
-    output_path_cognates_valtest = os.path.join(config["results_dir"],f"{valtest_corpus}-{input_type}-cognates.tsv")
-    # Download train corpus, if needed
-    download_if_needed(input_path_valtest, url_valtest)
+    if valtest_corpus != train_corpus:
+        # Set variables for val/test corpus
+        input_path_valtest = config["data_path"][valtest_corpus] # TODO: does not work yet for ielex-corr
+        url_valtest = config["data_url"][valtest_corpus]
+        output_path_valtest = os.path.join(config["results_dir"],f"{valtest_corpus}-{input_type}.tsv")
+        output_path_cognates_valtest = os.path.join(config["results_dir"],f"{valtest_corpus}-{input_type}-cognates.tsv")
+        # Download valtest corpus, if needed
+        download_if_needed(input_path_valtest, url_valtest)
+    else:
+        # If valtest and train corpus are the same, let valtest corpus point to same location as train corpus
+        output_path_cognates_valtest = output_path_cognates_train
 
 
     if "all" in languages:
-        print("Retrieve all languages from dataset")
+        print("Retrieving all languages from dataset...")
         languages = get_all_languages(input_path_train, train_corpus)
     
     print("Generating all language pairs...")
@@ -90,10 +95,13 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
     load_dataset(input_path_train, source=train_corpus, input_type=input_type, output_path=output_path_train)
     cd.cognate_detection_lexstat(output_path_train, output_path_cognates_train, input_type=input_type)
     
-    print("Validation/test corpus:")
-    load_dataset(input_path_valtest, source=valtest_corpus, input_type=input_type, output_path=output_path_valtest)
-    concepts_valtest = fetch_concepts(input_path_valtest, source=valtest_corpus)
-    cd.cognate_detection_lexstat(output_path_valtest, output_path_cognates_valtest, input_type=input_type)
+    if valtest_corpus != train_corpus:
+        print("Validation/test corpus:")
+        load_dataset(input_path_valtest, source=valtest_corpus, input_type=input_type, output_path=output_path_valtest)
+        concepts_valtest = fetch_concepts(input_path_valtest, source=valtest_corpus)
+        cd.cognate_detection_lexstat(output_path_valtest, output_path_cognates_valtest, input_type=input_type)
+    else:
+        print("Train corpus is valtest corpus.")
     
     excluded_concepts_training = []
     if train_corpus != valtest_corpus:
@@ -115,13 +123,11 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
     val = {}
     test = {}
     conversion_key = {}
-    #features_lp = {}
     # Max_len saved per language, rather than per language pair
     max_len = {}
 
     features = [pd.DataFrame(), pd.DataFrame()]
     voc_size = [0, 0]
-    #voc_size_general = [0, 0]
     for lang_pair in lang_pairs:
         lang_a, lang_b = lang_pair
         context_vectors_path[lang_pair] = utility.create_path(config["results_dir"], options, prefix="context_vectors_", lang_a=lang_a, lang_b=lang_b)
@@ -135,17 +141,17 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
         data_pickle = results_path[lang_pair] + "-data.p"
         if os.path.exists(data_pickle):
             with open(data_pickle, "rb") as f:
-                print("Loading train/val/test sets from pickle, nothing generated.")
+                print("Loading train/val/test sets from pickle, nothing generated...")
                 train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1] = pickle.load(f)
         else:
-            print("Create feature matrix for this specific language pair.")
+            print("Creating feature matrix for this specific language pair...")
             features, max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1] = get_corpus_info([output_path_cognates_train, output_path_cognates_valtest], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], feature_matrix_phon=feature_matrix_phon)
             conversion_key[lang_pair] = create_conversion_key(features)
 
-            print("Convert training corpus TSV file to data matrix")
+            print("Converting training corpus TSV file to data matrix...")
             dataset_train, train_mean, train_std = create_data_matrix(tsv_path=output_path_cognates_train, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config["batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], excluded_concepts=excluded_concepts_training, cognate_detection=config["cognate_detection"])
 
-            print("Convert val/test corpus TSV file to data matrix")
+            print("Converting val/test corpus TSV file to data matrix...")
             dataset_valtest, _, _ = create_data_matrix(tsv_path=output_path_cognates_valtest, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config["batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], cognate_detection=config["cognate_detection"], valtest=True, train_mean=train_mean, train_std=train_std)
 
             t_set_size = dataset_train.get_size()
@@ -162,7 +168,7 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
                 n_train, _, _ = dataset_train.compute_subset_sizes(t_set_size, only_train=True)
                 _, n_val, n_test = dataset_valtest.compute_subset_sizes(vt_set_size, only_valtest=True)
 
-            print("Divide into training, validation and test set.")
+            print("Dividing into training, validation and test set...")
             # Even if train and valtest corpus are the same, we do this separately,
             # because valtest corpus is filtered on cognates and train corpus is not
             # Use train corpus only for train set
@@ -170,7 +176,7 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
             # Use val/test corpus for validation and test set
             _, val[lang_pair], test[lang_pair] = dataset_valtest.divide_subsets(0, n_val, n_test)
 
-            print("Filter val/test sets on cognates.")
+            print("Filtering val/test sets on cognates...")
             # Use only cognate pairs for validation and test
             val[lang_pair] = val[lang_pair].filter_cognates()
             test[lang_pair] = test[lang_pair].filter_cognates()
@@ -179,8 +185,8 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
             # Pickle train/val/test/sets
             with open(data_pickle, "wb") as f:
                 pickle.dump((train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1]), f)
-
-    return results_path, lang_pairs, train, val, test, max_len, conversion_key, voc_size
+    print("Done loading data.")
+    return results_path, output_path_cognates_train, output_path_cognates_valtest, context_vectors_path, lang_pairs, train, val, test, max_len, conversion_key, voc_size
 
 def get_all_languages(data_file, source_type):
     if source_type == "ielex" or source_type == "ielex-corr":
@@ -683,7 +689,8 @@ def create_conversion_key(features):
 
 
 def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold):
-    df = pd.read_csv(input_file + ".tsv", sep="\t")
+    print("Calculate number of cognates per language...")
+    df = pd.read_csv(input_file, sep="\t")
     concepts = df["CONCEPT"].unique()
     cognate_count = defaultdict(int)
     for (lang_a, lang_b) in lang_pairs:

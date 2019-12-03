@@ -211,7 +211,6 @@ def cognate_detection_cluster(lang_pairs, results_dir, options, use_distance="pr
     for label, method in methods:
         for threshold in thresholds:
             method_threshold = label + "-" + str(threshold)
-            print(method_threshold)
             # Arrays to hold scores for all concepts
             precision_scores = []
             recall_scores = []
@@ -362,7 +361,8 @@ def cognate_detection_lexstat(output_path, output_cognates_path, input_type):
     lex.cluster(method="lexstat", threshold=0.6, ref="COGNATES_LEXSTAT")
     
     print(f"Output cognates to {output_cognates_path}.")
-    lex.output('tsv', filename=output_cognates_path, ignore="all", prettify=False)
+    output_cognates_path_no_extension = output_cognates_path.split(".")[0]
+    lex.output('tsv', filename=output_cognates_path_no_extension, ignore="all", prettify=False)
 
     
 # Average F scores over all language pairs
