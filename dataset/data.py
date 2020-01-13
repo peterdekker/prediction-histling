@@ -451,22 +451,19 @@ def create_one_hot_matrix(tokens_list):
 
 def create_embedding(lang, tsv_paths_list):
     # Re-use existing embedding file if possible
-    emb_filename = "emb" + "_" + lang + "_" + "_".join(tsv_paths_list) + ".tsv"
+    corpora_names = [t.split(".tsv")[0].split("/")[-1] for t in tsv_paths_list]
+    emb_filename = os.path.join(config["results_dir"], f"emb_{lang}_{'_'.join(corpora_names)}.tsv")
     if os.path.exists(emb_filename):
         print("Using existing embedding file for " + lang)
         df_emb_file = pd.read_csv(emb_filename, sep="\t", index_col=0)
         return df_emb_file
-        
     print("Creating embedding for " + lang)
-    
-    embedding = defaultdict(lambda : defaultdict(float))
-    
+    embedding = defaultdict(lambda: defaultdict(float))
     for tsv_path in tsv_paths_list:
         # Read in TSV file
         df = pd.read_csv(tsv_path, sep="\t", engine="python", skipfooter=3, index_col=False)
         df_lang = df[df["DOCULECT"] == lang]
-        words_list = list(df_lang["TOKENS"])
-        
+        words_list = list(df_lang["TOKENS"])     
         for word in words_list:
             split_word = word.split()
             for i, token in enumerate(split_word):
@@ -719,14 +716,15 @@ def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold):
                     elif "COGNATES_LEXSTAT" in df and pd.notnull(lang0_entry["COGNATES_LEXSTAT"]) and pd.notnull(lang1_entry["COGNATES_LEXSTAT"]):
                         if lang0_entry["COGNATES_LEXSTAT"] == lang1_entry["COGNATES_LEXSTAT"]:
                             cognate_count[(lang_a, lang_b)] += 1
-        print(lang_a + "-" + lang_b + ":" + str(cognate_count[(lang_a, lang_b)]))
     
     # Create dataframe of cognate counts per language pair
     count_df = pd.DataFrame.from_dict(cognate_count, orient="index")
     count_df.columns = ["Cognates"]
     count_df = count_df.sort_values("Cognates", ascending=False)
-    count_df.to_csv("n_cognates.tsv", sep="\t")
+    n_cognates_filename = os.path.join(config["results_dir"],"n_cognates.tsv")
+    count_df.to_csv(n_cognates_filename, sep="\t")
     
+    print("Calculate cliques...")
     # Create graph of language pairs with minimum number of cognates
     graph = igraph.Graph()
     graph.add_vertices(langs)
@@ -738,7 +736,8 @@ def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold):
     cliques_labels = [[langs[item] for item in clique] for clique in cliques]
     # Sort keys
     cliques_labels.sort(key=len, reverse=True)
-    with open("langs_cliques_" + str(cognates_threshold) + ".txt", "w") as f:
+    cliques_filename = os.path.join(config["results_dir"], f"langs_cliques_{str(cognates_threshold)}.txt")
+    with open(cliques_filename, "w") as f:
         for cl in cliques_labels:
             f.write(" ".join(cl) + "\n")
     return count_df, cliques_labels

@@ -1,4 +1,7 @@
 {
     "python.linting.enabled": true,
-    "python.pythonPath": "env/bin/python3"
+    "python.pythonPath": "ph-env/bin/python3",
+    "editor.multiCursorModifier": "ctrlCmd",
+    "python.linting.flake8Enabled": true,
+    "python.linting.pylintEnabled": false
 }
