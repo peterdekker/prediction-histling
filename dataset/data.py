@@ -1,19 +1,19 @@
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Copyright (C) 2018 Peter Dekker
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 from dataset.Dataset import Dataset
 
 from collections import defaultdict
@@ -23,22 +23,18 @@ from util.config import config
 
 
 import itertools
-#from lingpy import *
-from lingpy.sequence.sound_classes import ipa2tokens, asjp2tokens
+# from lingpy import *
+from lingpy.sequence.sound_classes import ipa2tokens
 import numpy as np
 import os
 import requests
 import pandas as pd
-from scipy.spatial.distance import euclidean, cosine, sqeuclidean, canberra, cityblock, correlation, chebyshev
-import sys
+from scipy.spatial.distance import euclidean
 import igraph
 import pickle
 import pathlib
 
-
-
-# import igraph
-PROBLEM_LANGUAGES = ["IE.Indic.Bengali", "IE.Iranian.Ossetic", "IE.Iranian.Pashto"]  # , "IE.Albanian.Albanian", "IE.Baltic.Lithuanian", "IE.Celtic.Welsh", "IE.Germanic.Danish", "IE.Germanic.English", "IE.Germanic.Norwegian", "IE.Germanic.Swedish", "IE.Greek.Greek"]
+PROBLEM_LANGUAGES = ["IE.Indic.Bengali", "IE.Iranian.Ossetic", "IE.Iranian.Pashto"]
 
 
 def download_if_needed(file_path, url):
@@ -52,49 +48,44 @@ def download_if_needed(file_path, url):
             r = requests.get(url, allow_redirects=True)
             # Write downloaded content to file
             f.write(r.content)
-        
-
 
 
 def load_data(train_corpus, valtest_corpus, languages, input_type, options):
     # Set variables for train corpus
-    input_path_train = config["data_path"][train_corpus] # TODO: does not work yet for ielex-corr
+    input_path_train = config["data_path"][train_corpus]  # TODO: does not work yet for ielex-corr
     url_train = config["data_url"][train_corpus]
-    output_path_train = os.path.join(config["results_dir"],f"{train_corpus}-{input_type}.tsv")
-    output_path_cognates_train = os.path.join(config["results_dir"],f"{train_corpus}-{input_type}-cognates.tsv")
+    output_path_train = os.path.join(config["results_dir"], f"{train_corpus}-{input_type}.tsv")
+    output_path_cognates_train = os.path.join(config["results_dir"], f"{train_corpus}-{input_type}-cognates.tsv")
     # Download train corpus, if needed
     download_if_needed(input_path_train, url_train)
-    
+
     if valtest_corpus != train_corpus:
         # Set variables for val/test corpus
-        input_path_valtest = config["data_path"][valtest_corpus] # TODO: does not work yet for ielex-corr
+        input_path_valtest = config["data_path"][valtest_corpus]  # TODO: does not work yet for ielex-corr
         url_valtest = config["data_url"][valtest_corpus]
-        output_path_valtest = os.path.join(config["results_dir"],f"{valtest_corpus}-{input_type}.tsv")
-        output_path_cognates_valtest = os.path.join(config["results_dir"],f"{valtest_corpus}-{input_type}-cognates.tsv")
+        output_path_valtest = os.path.join(config["results_dir"], f"{valtest_corpus}-{input_type}.tsv")
+        output_path_cognates_valtest = os.path.join(
+            config["results_dir"], f"{valtest_corpus}-{input_type}-cognates.tsv")
         # Download valtest corpus, if needed
         download_if_needed(input_path_valtest, url_valtest)
     else:
         # If valtest and train corpus are the same, let valtest corpus point to same location as train corpus
         output_path_cognates_valtest = output_path_cognates_train
 
-
     if "all" in languages:
         print("Retrieving all languages from dataset...")
         languages = get_all_languages(input_path_train, train_corpus)
-    
+
+    print("Loading phonetic feature matrix...")
+    feature_matrix_phon = load_feature_file(config["feature_file"])
+
     print("Generating all language pairs...")
-    feature_matrix_phon = None
-    if config["input_encoding"] == "phonetic" or config["visualize_weights"] or config["visualize_encoding"]:
-        feature_matrix_phon = load_feature_file(config["feature_file"])
-    perms = False
-    if len(languages) > 2:
-        perms = True
-    lang_pairs = utility.generate_pairs(languages, allow_permutations=perms, sample=config["sample_lang_pairs"])
-    
+    lang_pairs = utility.generate_pairs(languages, allow_permutations=len(languages) > 2, sample=config["sample_lang_pairs"])
+
     print("Training corpus:")
     load_dataset(input_path_train, source=train_corpus, input_type=input_type, output_path=output_path_train)
     cd.cognate_detection_lexstat(output_path_train, output_path_cognates_train, input_type=input_type)
-    
+
     if valtest_corpus != train_corpus:
         print("Validation/test corpus:")
         load_dataset(input_path_valtest, source=valtest_corpus, input_type=input_type, output_path=output_path_valtest)
@@ -102,7 +93,7 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
         cd.cognate_detection_lexstat(output_path_valtest, output_path_cognates_valtest, input_type=input_type)
     else:
         print("Train corpus is valtest corpus.")
-    
+
     excluded_concepts_training = []
     if train_corpus != valtest_corpus:
         print("Loading IElex->NorthEuraLex concept mapping...")
@@ -112,7 +103,7 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
             if concept in ielex_nelex_map:
                 concept_nelex = ielex_nelex_map[concept]
                 excluded_concepts_training.append(concept_nelex)
-    
+
     # Language-pair specific variables: every dict entry is designated for a specific lang pair
     results_path = {}
     subs_sp_path = {}
@@ -130,29 +121,36 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
     voc_size = [0, 0]
     for lang_pair in lang_pairs:
         lang_a, lang_b = lang_pair
-        context_vectors_path[lang_pair] = utility.create_path(config["results_dir"], options, prefix="context_vectors_", lang_a=lang_a, lang_b=lang_b)
+        context_vectors_path[lang_pair] = utility.create_path(
+            config["results_dir"], options, prefix="context_", lang_a=lang_a, lang_b=lang_b)
         # Create export path, containing all options
         # This is used to output a prediction results file, which can then be used for visualization and cognate detection
         results_path[lang_pair] = utility.get_results_path(lang_a, lang_b, config["results_dir"], options)
-        subs_st_path[lang_pair] = utility.create_path(config["results_dir"], options, prefix="subs_st_", lang_a=lang_a, lang_b=lang_b)
-        subs_sp_path[lang_pair] = utility.create_path(config["results_dir"], options, prefix="subs_sp_", lang_a=lang_a, lang_b=lang_b)
+        subs_st_path[lang_pair] = utility.create_path(
+            config["results_dir"], options, prefix="subs_st_", lang_a=lang_a, lang_b=lang_b)
+        subs_sp_path[lang_pair] = utility.create_path(
+            config["results_dir"], options, prefix="subs_sp_", lang_a=lang_a, lang_b=lang_b)
 
         # If data in pickle, load pickle
         data_pickle = results_path[lang_pair] + "-data.p"
         if os.path.exists(data_pickle):
             with open(data_pickle, "rb") as f:
                 print("Loading train/val/test sets from pickle, nothing generated...")
-                train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1] = pickle.load(f)
+                (train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], max_len[lang_pair[0]],
+                 max_len[lang_pair[1]], voc_size[0], voc_size[1]) = pickle.load(f)
         else:
             print("Creating feature matrix for this specific language pair...")
-            features, max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1] = get_corpus_info([output_path_cognates_train, output_path_cognates_valtest], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], feature_matrix_phon=feature_matrix_phon)
+            features, max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1] = get_corpus_info(
+                [output_path_cognates_train, output_path_cognates_valtest], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], feature_matrix_phon=feature_matrix_phon)
             conversion_key[lang_pair] = create_conversion_key(features)
 
             print("Converting training corpus TSV file to data matrix...")
-            dataset_train, train_mean, train_std = create_data_matrix(tsv_path=output_path_cognates_train, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config["batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], excluded_concepts=excluded_concepts_training, cognate_detection=config["cognate_detection"])
+            dataset_train, train_mean, train_std = create_data_matrix(tsv_path=output_path_cognates_train, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config[
+                                                                      "batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], excluded_concepts=excluded_concepts_training, cognate_detection=config["cognate_detection"])
 
             print("Converting val/test corpus TSV file to data matrix...")
-            dataset_valtest, _, _ = create_data_matrix(tsv_path=output_path_cognates_valtest, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config["batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], cognate_detection=config["cognate_detection"], valtest=True, train_mean=train_mean, train_std=train_std)
+            dataset_valtest, _, _ = create_data_matrix(tsv_path=output_path_cognates_valtest, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config[
+                                                       "batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], cognate_detection=config["cognate_detection"], valtest=True, train_mean=train_mean, train_std=train_std)
 
             t_set_size = dataset_train.get_size()
             vt_set_size = dataset_valtest.get_size()
@@ -180,13 +178,17 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
             # Use only cognate pairs for validation and test
             val[lang_pair] = val[lang_pair].filter_cognates()
             test[lang_pair] = test[lang_pair].filter_cognates()
-            print("Val/test sizes after cognate filtering: " + str(val[lang_pair].get_size()) + "|" + str(test[lang_pair].get_size()))
+            print("Val/test sizes after cognate filtering: " +
+                  str(val[lang_pair].get_size()) + "|" + str(test[lang_pair].get_size()))
 
             # Pickle train/val/test/sets
             with open(data_pickle, "wb") as f:
-                pickle.dump((train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1]), f)
+                pickle.dump((train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair],
+                             max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1]), f)
     print("Done loading data.")
-    return results_path, output_path_cognates_train, output_path_cognates_valtest, context_vectors_path, lang_pairs, train, val, test, max_len, conversion_key, voc_size
+    return (results_path, output_path_cognates_train, output_path_cognates_valtest, context_vectors_path, subs_sp_path, subs_st_path, lang_pairs,
+            train, val, test, max_len, conversion_key, voc_size, feature_matrix_phon)
+
 
 def get_all_languages(data_file, source_type):
     if source_type == "ielex" or source_type == "ielex-corr":
@@ -197,7 +199,7 @@ def get_all_languages(data_file, source_type):
 
 def write_results_table(results_table, testset, results_filename):
     results_table.to_csv(results_filename, sep="\t")
-    
+
     # Write tables per concept. Needed for cognate detection
 
 
@@ -217,49 +219,51 @@ def load_dataset(input_path, source, input_type, output_path):
     if os.path.exists(output_path):
         print("Using existing wordlist file, nothing is generated.")
         return
-    df = pd.read_csv(input_path, sep="\t",na_filter=False) # No NA filter: the word form 'nan' should not be interpreted as NaN :p
-    
+    # No NA filter: the word form 'nan' should not be interpreted as NaN :p
+    df = pd.read_csv(input_path, sep="\t", na_filter=False)
+
     # Depending on file format, remove and/or rename columns
     if source == "ielex" or source == "ielex-corr":
         # Rename columns
-        df.rename(columns={"Language":"DOCULECT", "Meaning":"CONCEPT", "Phonological Form": "IPA", "Cognate Class":"COGNATES_IELEX", "cc": "CONCEPT_COGNATES_IELEX"}, inplace=True)
+        df.rename(columns={"Language": "DOCULECT", "Meaning": "CONCEPT", "Phonological Form": "IPA",
+                           "Cognate Class": "COGNATES_IELEX", "cc": "CONCEPT_COGNATES_IELEX"}, inplace=True)
         # Drop column with unused numbers
         df.drop(df.columns[[0]], axis=1, inplace=True)
     elif source == "northeuralex":
-        df.rename(columns={"Language_ID":"DOCULECT", "Concept_ID":"CONCEPT"}, inplace=True)
+        df.rename(columns={"Language_ID": "DOCULECT", "Concept_ID": "CONCEPT"}, inplace=True)
 
     tokens = []
-    if source=="ielex":
+    if source == "ielex":
         # Perform IPA->ASJP conversion if source is ielex
         forms = []
         for form_ipa in df["IPA"]:
             # ipa_to_asjp method accepts both space-separated (NELex) and
             # non-separated (IELex)
-            if input_type=="asjp":
+            if input_type == "asjp":
                 form_asjp = utility.ipa_to_asjp(form_ipa)
                 forms.append(form_asjp)
                 tokens_form = list(form_asjp)
-            elif input_type=="ipa":
+            elif input_type == "ipa":
                 tokens_form = ipa2tokens(form_ipa)
             tokens_string = " ".join(tokens_form)
             tokens.append(tokens_string)
-        if input_type=="asjp":
+        if input_type == "asjp":
             df["ASJP"] = forms
         df["TOKENS"] = tokens
-    elif source=="northeuralex":
-        if input_type=="asjp":
+    elif source == "northeuralex":
+        if input_type == "asjp":
             for form_asjp in df["ASJP"]:
                 tokens_form = list(form_asjp)
                 tokens_string = " ".join(tokens_form)
                 tokens.append(tokens_string)
             df["TOKENS"] = tokens
-        elif input_type=="ipa":
-            df["TOKENS"]=df[input_type]
-    # Filter out rows with XXX phonology field. Is this right???
+        elif input_type == "ipa":
+            df["TOKENS"] = df[input_type]
+    # Filter out rows with XXX phonology field.
     df = df[df["IPA"] != "XXX"]
     # Filter out rows with empty phonology field
     df = df[df["IPA"] != ""]
-    
+
     # Apply IELex cognate judgments to NElex
     # TODO: We can only do this if there is a publicly available intersection file
     #
@@ -278,10 +282,10 @@ def load_dataset(input_path, source, input_type, output_path):
     #     df["COGNATES_IELEX"] = cognates_intersection
     #     # Create CONCEPT_COGNATES_IELEX column with unique cognate classes across concepts
     #     df["CONCEPT_COGNATES_IELEX"] = df["CONCEPT"] + "-" + df["COGNATES_IELEX"]
-    
+
     print(f" - Writing corpus (with conversions) to {output_path}")
     df.to_csv(output_path, index_label="ID", sep="\t")
-    
+
     # Add . to tokens list as end of word marker
     # tokens_list = list(tokens_set)
     # tokens_list.append(".")
@@ -295,22 +299,24 @@ def fetch_concepts(input_path, source):
     elif source == "ielex" or source == "ielex-corr":
         df = pd.read_csv(input_path)
         # Rename columns
-        df.rename(columns={"Language":"DOCULECT", "Meaning":"CONCEPT", "Phonological Form": "IPA", "Cognate Class":"COGNATES_IELEX", "cc": "CONCEPT_COGNATES_IELEX"}, inplace=True)
+        df.rename(columns={"Language": "DOCULECT", "Meaning": "CONCEPT", "Phonological Form": "IPA",
+                           "Cognate Class": "COGNATES_IELEX", "cc": "CONCEPT_COGNATES_IELEX"}, inplace=True)
         concepts = df["CONCEPT"].unique()
-            
+
     else:
         raise ValueError("Unknown file format.")
-    
+
     return concepts
+
 
 def word_surface(encoded_word, conversion_key, encoding, mask=None):
     surface_tokens = []
-    
+
     if mask is not None:
         word_length = np.count_nonzero(mask)
     else:
         word_length = encoded_word.shape[0]
-        
+
     if encoding == "phonetic" or encoding == "embedding":
         # In this case, conversion_key is dat dict from feature strings to tokens
         for t in np.arange(word_length):
@@ -344,7 +350,7 @@ def find_nearest_token(encoded_token, conversion_key):
         dist = euclidean(list(avail_token), encoded_token)
         if dist < lowest_dist:
             lowest_dist_token = avail_token
-    
+
     return lowest_dist_token
 
 
@@ -353,7 +359,7 @@ def find_nearest_token(encoded_token, conversion_key):
 def encode_word(word_tokens, features, max_length):
     voc_size = features.shape[1]
     encoded_word = np.zeros((max_length, voc_size))
-    
+
     tokens = word_tokens.split(" ")
     word_length = min(len(tokens), max_length)  # if word longer than max_length, rest is disregarded
     for t in np.arange(max_length):
@@ -366,7 +372,7 @@ def encode_word(word_tokens, features, max_length):
         encoded_word[t] = encoded_token
     mask = np.ones(max_length)
     mask[word_length:] = 0
-    
+
     return encoded_word, mask
 
 
@@ -376,16 +382,16 @@ def _fill_word(word_tokens, max_length):
     filled_word[:len(tokens)] = tokens
     return filled_word
 
-    
+
 def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, feature_matrix_phon=None):
     tokens_list_corpora = []
     max_len_corpora = []
     voc_size_corpora = []
-    
+
     for tsv_path in paths_list:
         # Read in TSV file
         df = pd.read_csv(tsv_path, sep="\t", engine="python", skipfooter=3, index_col=False)
-        
+
         # Get tokens set and word length for both languages
         tokens_list = [[], []]
         voc_size = [0, 0]
@@ -394,7 +400,7 @@ def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, feat
             lang = lang_pair[ix]
             df_lang = df[df["DOCULECT"] == lang]
             words_list = list(df_lang["TOKENS"])
-            
+
             tokens_set = set()
             for word in words_list:
                 split_word = word.split()
@@ -404,23 +410,23 @@ def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, feat
             tokens_list[ix] = list(tokens_set)
             tokens_list[ix].append(".")
             voc_size[ix] = len(tokens_list[ix])
-        
+
         # Save values for different corpora in lists
         tokens_list_corpora.append(tokens_list)
         voc_size_corpora.append(voc_size)
         max_len_corpora.append(max_len)
-    
+
     # Now combine the values from the different corpora
     max_len_x_combined = max([max_len[0] for max_len in max_len_corpora])
     max_len_y_combined = max([max_len[1] for max_len in max_len_corpora])
-    
+
     tokens_list_corpora_x = [f[0] for f in tokens_list_corpora]
     tokens_list_corpora_y = [f[1] for f in tokens_list_corpora]
     tokens_list_combined_x = list(set(itertools.chain.from_iterable(tokens_list_corpora_x)))
     tokens_list_combined_y = list(set(itertools.chain.from_iterable(tokens_list_corpora_y)))
-    
+
     # Separate encoding for input and output (target)
-    
+
     if input_encoding == "phonetic":
         # Reduce feature matrix to just tokens used in this language
         feature_matrix_x = feature_matrix_phon.loc[tokens_list_combined_x]
@@ -428,7 +434,7 @@ def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, feat
         feature_matrix_x = create_one_hot_matrix(tokens_list_combined_x)
     elif input_encoding == "embedding":
         feature_matrix_x = create_embedding(lang_pair[0], paths_list)
-        
+
     if output_encoding == "phonetic":
         # Reduce feature matrix to just tokens used in this language
         feature_matrix_y = feature_matrix_phon.loc[tokens_list_combined_y]
@@ -436,7 +442,7 @@ def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, feat
         feature_matrix_y = create_one_hot_matrix(tokens_list_combined_y)
     elif output_encoding == "embedding":
         feature_matrix_y = create_embedding(lang_pair[1], paths_list)
-    
+
     feature_matrix = (feature_matrix_x, feature_matrix_y)
     voc_size_combined = (feature_matrix_x.shape[1], feature_matrix_y.shape[1])
     return feature_matrix, max_len_x_combined, max_len_y_combined, voc_size_combined[0], voc_size_combined[1]
@@ -450,20 +456,20 @@ def create_one_hot_matrix(tokens_list):
 
 
 def create_embedding(lang, tsv_paths_list):
+    print(" - Creating embedding for " + lang)
     # Re-use existing embedding file if possible
     corpora_names = [t.split(".tsv")[0].split("/")[-1] for t in tsv_paths_list]
     emb_filename = os.path.join(config["results_dir"], f"emb_{lang}_{'_'.join(corpora_names)}.tsv")
     if os.path.exists(emb_filename):
-        print("Using existing embedding file for " + lang)
+        print(" -- Using existing embedding file for " + lang)
         df_emb_file = pd.read_csv(emb_filename, sep="\t", index_col=0)
         return df_emb_file
-    print("Creating embedding for " + lang)
     embedding = defaultdict(lambda: defaultdict(float))
     for tsv_path in tsv_paths_list:
         # Read in TSV file
         df = pd.read_csv(tsv_path, sep="\t", engine="python", skipfooter=3, index_col=False)
         df_lang = df[df["DOCULECT"] == lang]
-        words_list = list(df_lang["TOKENS"])     
+        words_list = list(df_lang["TOKENS"])
         for word in words_list:
             split_word = word.split()
             for i, token in enumerate(split_word):
@@ -479,8 +485,8 @@ def create_embedding(lang, tsv_paths_list):
                 else:
                     # Add end of word as neighbour
                     embedding[token]["END"] += 1
-                
-                #### 2 LEFT AND 2 RIGHT
+
+                # 2 LEFT AND 2 RIGHT
                 # if i-2 >= 0:
                     # embedding[token][split_word[i-2]+"LEFT2"] += 1
                 # else:
@@ -491,22 +497,24 @@ def create_embedding(lang, tsv_paths_list):
                 # else:
                     # # Add end of word as neighbour
                     # embedding[token]["END2"] += 1
-    
+
     # Create "." character, filled with all 0s
     # (By touching only START neighbour, rest is set to 0 automatically
     # by defaultdict and fillna)
     embedding["."]["START"] = 0
-    
+
     # Convert dict-of-dicts to dataframe
     df = pd.DataFrame.from_dict(embedding, orient="index")
     # Normalize df per row: values for all neighbours of a token sum to 1
     df = df.divide(df.sum(axis=1), axis=0).fillna(0)
     df.to_csv(emb_filename, sep="\t")
     return df
-    
 
-def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_size, fixed_length_x=None, fixed_length_y=None, mean_subtraction=False, feature_standardization=False, excluded_concepts=[], only_cognates=False, cognate_detection=False, valtest=False, train_mean=None, train_std=None):
-    
+
+def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_size, fixed_length_x=None,
+                       fixed_length_y=None, mean_subtraction=False, feature_standardization=False, excluded_concepts=[],
+                       only_cognates=False, cognate_detection=False, valtest=False, train_mean=None, train_std=None):
+
     # Read in TSV file
     df = pd.read_csv(tsv_path, sep="\t", engine="python", skipfooter=3, index_col=False)
     df = df[df["DOCULECT"].isin(lang_pair)]
@@ -515,18 +523,18 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
     concepts = df["CONCEPT"].unique()
     # Sort to have same list of concepts for every language for cognate detection
     concepts = sorted(concepts)
-    
+
     matrix_x = []
     matrix_x_unnormalized = []
     matrix_y = []
     mask_x = []
-    
+
     matrix_x_unbounded = []
     matrix_y_unbounded = []
-    
+
     datafile_ids = []
     word_lengths_unbounded = []
-    
+
     for concept in concepts:
         if concept in excluded_concepts:
             continue
@@ -536,7 +544,7 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
         if len(lang0_entries) == 0 or len(lang1_entries) == 0:
             # Concept not available for one of the languages in langpair, skip.
             continue
-        
+
         # Add word pairs for all possible combinations of words for this concept
         for _, lang0_entry in lang0_entries.iterrows():
             for _, lang1_entry in lang1_entries.iterrows():
@@ -559,7 +567,7 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
                 word_encoded_y_unbounded = _fill_word(y, max_len_pair)
                 # Keep track of word lengths, needed for SeqModel algorithm
                 word_lengths_unbounded.append(max_len_pair)
-                
+
                 if mean_subtraction and not feature_standardization:
                     word_encoded_x_norm = perform_mean_subtraction(word_encoded_x)
                     matrix_x.append(word_encoded_x_norm)
@@ -568,7 +576,7 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
                 matrix_x_unnormalized.append(word_encoded_x)
                 matrix_y.append(word_encoded_y)
                 mask_x.append(word_mask_x)
-                
+
                 # Unbounded matrix for SeqModel
                 # Unbounded X matrix is always unnormalized
                 matrix_x_unbounded.append(word_encoded_x_unbounded)
@@ -579,7 +587,7 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
                     break
             if cognate_detection:
                 break
-    
+
     word_lengths_2 = [len(x) for x in matrix_x_unbounded]
     assert np.sum(word_lengths_2) == np.sum(word_lengths_unbounded)
     # Convert list of NumPy arrays to full NumPy array
@@ -589,7 +597,7 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
     matrix_y = np.array(matrix_y)
     mask_x = np.array(mask_x)
     assert matrix_x.shape[0] == matrix_y.shape[0]
-    
+
     # SeqModel matrices: convert to NP array, to enable fancy indexing
     # Row lengths are uneven, because of uneven word lengths
     matrix_x_unbounded = np.array(matrix_x_unbounded)
@@ -608,7 +616,8 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
         # During valtest: standardize using mean and std from train set
         if valtest:
             print("USE TRAIN M/S")
-            matrix_x, _, _ = standardize(matrix_x_unnormalized, valtest=True, train_mean=train_mean, train_std=train_std)
+            matrix_x, _, _ = standardize(matrix_x_unnormalized, valtest=True,
+                                         train_mean=train_mean, train_std=train_std)
     return Dataset(batch_size, matrix_x, matrix_x_unnormalized, matrix_y, mask_x, max_len[0], max_len[1], matrix_x_unbounded, matrix_y_unbounded, tsv_path, datafile_ids, word_lengths_unbounded), train_mean_calc, train_std_calc
 
 
@@ -627,7 +636,7 @@ def standardize(matrix, valtest=False, train_mean=None, train_std=None):
     matrix_new_t = np.zeros(matrix_t.shape)
     # After transposing matrix, every row corresponds to one feature, over all examples
     n_features = matrix_t.shape[0]
-    
+
     # Create arrays for mean and std per feature
     mean = np.zeros(n_features)
     std = np.zeros(n_features)
@@ -648,7 +657,7 @@ def standardize(matrix, valtest=False, train_mean=None, train_std=None):
         matrix_new_t[feat] = new_row
     matrix_new = matrix_new_t.T
     return matrix_new, mean, std
-        
+
 
 def perform_mean_subtraction(input_vector):
     mean = np.mean(input_vector)
@@ -696,7 +705,7 @@ def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold):
         # print(lang_a_entries["COGNATES_IELEX"])
         # print(lang_b_entries["COGNATES_IELEX"].count())
         # cognate_count[(lang_a,lang_b)] = lang_a_entries[lang_a_entries["COGNATES_IELEX"] == lang_b_entries["COGNATES_IELEX"]].count()
-        
+
         for concept in concepts:
             concept_entries = df[df["CONCEPT"] == concept]
             lang0_entries = concept_entries[concept_entries["DOCULECT"] == lang_a]
@@ -704,7 +713,7 @@ def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold):
             if len(lang0_entries) == 0 or len(lang1_entries) == 0:
                 # Concept not available for one of the languages in langpair, skip.
                 continue
-            
+
             # Add word pairs for all possible combinations of words for this concept
             for _, lang0_entry in lang0_entries.iterrows():
                 for _, lang1_entry in lang1_entries.iterrows():
@@ -716,14 +725,14 @@ def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold):
                     elif "COGNATES_LEXSTAT" in df and pd.notnull(lang0_entry["COGNATES_LEXSTAT"]) and pd.notnull(lang1_entry["COGNATES_LEXSTAT"]):
                         if lang0_entry["COGNATES_LEXSTAT"] == lang1_entry["COGNATES_LEXSTAT"]:
                             cognate_count[(lang_a, lang_b)] += 1
-    
+
     # Create dataframe of cognate counts per language pair
     count_df = pd.DataFrame.from_dict(cognate_count, orient="index")
     count_df.columns = ["Cognates"]
     count_df = count_df.sort_values("Cognates", ascending=False)
-    n_cognates_filename = os.path.join(config["results_dir"],"n_cognates.tsv")
+    n_cognates_filename = os.path.join(config["results_dir"], "n_cognates.tsv")
     count_df.to_csv(n_cognates_filename, sep="\t")
-    
+
     print("Calculate cliques...")
     # Create graph of language pairs with minimum number of cognates
     graph = igraph.Graph()
@@ -731,7 +740,7 @@ def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold):
     for lang_a, lang_b in cognate_count:
         if cognate_count[lang_a, lang_b] > cognates_threshold:
             graph[lang_a, lang_b] = 1
-    
+
     cliques = graph.maximal_cliques()
     cliques_labels = [[langs[item] for item in clique] for clique in cliques]
     # Sort keys
@@ -741,7 +750,7 @@ def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold):
         for cl in cliques_labels:
             f.write(" ".join(cl) + "\n")
     return count_df, cliques_labels
-    
+
 # ~ def generate_random_Y(shape):
     # ~ # Random Y: set one random position of every one-hot-array to 1
     # ~ Y = np.zeros(shape)
@@ -749,8 +758,7 @@ def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold):
     # ~ word_length = Y.shape[1]
     # ~ voc_size = Y.shape[2]
     # ~ for ex in np.arange(n_examples):
-        # ~ for t in np.arange(word_length):
-            # ~ i = random.randint(0,voc_size-1)
-            # ~ Y[ex][t][i] = 1
+    # ~ for t in np.arange(word_length):
+    # ~ i = random.randint(0,voc_size-1)
+    # ~ Y[ex][t][i] = 1
     # ~ return Y
-        

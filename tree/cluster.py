@@ -26,9 +26,25 @@
 
 import numpy as np
 from lingpy.algorithm.clustering import upgma, neighbor
-from lingpy.basic.tree import Tree
+from ete3 import Tree, TreeStyle, NodeStyle, TextFace
+from scipy.spatial.distance import pdist, squareform
+from util.config import config
+import os
 
 
+# Method to hierarchically cluster phonemes, represented in a phoneme encoding
+def cluster_phonemes_encoding(encoding_matrix, phonemes, encoding_name):
+    # Computer pairwise distance matrix
+    # using euclidean distance
+    metric = "euclidean"
+    dist_matrix = squareform(pdist(encoding_matrix, metric))
+    output_path = os.path.join(config["results_dir"], f"enc_{encoding_name}_{metric}")
+    tree = cluster_hierarchical(output_path, dist_matrix, phonemes, cluster_alg=neighbor, cluster_alg_label="Neighbour joining", phonemes_encoding_tree=True)
+    return tree
+
+
+# Method used to hierarchically cluster word prediction distances from file,
+# where both prediction directions for a language pair have to be averaged
 def cluster_languages(lang_pairs, distances_path, output_path, distance_col=2):
     languages = list(set([e for pair in lang_pairs for e in pair]))
     distance = {}
@@ -80,16 +96,9 @@ def cluster_languages(lang_pairs, distances_path, output_path, distance_col=2):
             dists_string = ["{0:.2f}".format(v) for v in matrix[row]]
             distances_tex.write(languages_short[row] + "&" + "&".join(dists_string) + "\\\\\n")
     
-    # Create phylogenetic trees and output to file
-    trees = [("UPGMA", upgma(matrix, languages_short)), ("Neighbor joining", neighbor(matrix, languages_short))]
-    for label, tree in trees:
-        print(label)
-        tree = Tree(tree)
-        print(tree)
-        print(tree.asciiArt())
-        print("")
-        with open(output_path + "_" + "_".join(label.split()) + ".tree", "w") as tree_file:
-            tree_file.write(str(tree))
+    # Perform hierarchical clustering
+    for alg, label in [(upgma, "UPGMA"), (neighbor, "Neighbour joining")]:
+        cluster_hierarchical(output_path, matrix, languages_short, cluster_alg=alg, cluster_alg_label=label)
     
     # Calculate mean over all languages and output to file
     # Use original 'distance' dict, not 'matrix' which has been edited
@@ -99,5 +108,29 @@ def cluster_languages(lang_pairs, distances_path, output_path, distance_col=2):
         mdist_file.write(str(mean_distance))
     
     with open(distances_path + ".txt", "r") as f:
-        print(f.read())
+        print(f.read())         
+
+
+# Create phylogenetic trees and output to file
+def cluster_hierarchical(output_path, matrix, species_names, cluster_alg, cluster_alg_label, phonemes_encoding_tree=False):
+    print(f" - Creating tree using {cluster_alg_label}, saving to .nw and .pdf")
+    # Turn off distances if this is a phonemes encoding tree
+    newick_string = cluster_alg(matrix, species_names, distances= (not phonemes_encoding_tree))
+    # Load newick string into ete3 Tree object
+    tree = Tree(newick_string)
+    if phonemes_encoding_tree:
+        tree.convert_to_ultrametric()
+    for node in tree.traverse():
+        node.set_style(config["ete_node_style"])
+        if phonemes_encoding_tree:
+            node.img_style["size"] = 0
+        if node.is_leaf():
+            # Add bit of extra space between leaf branch and leaf label
+            name_face = TextFace(f" {node.name}", fgcolor="black", fsize=14)
+            node.add_face(name_face, column=0, position='branch-right')
             
+    # Output to pdf and nw
+    filename_base = output_path + "_" + "_".join(cluster_alg_label.split())
+    tree.render(f"{filename_base}.pdf", tree_style=config["ete_tree_style"])
+    tree.write(format=0, outfile=f"{filename_base}.nw")
+    return tree

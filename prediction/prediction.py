@@ -18,7 +18,7 @@ def word_prediction(lang_a, lang_b, max_len, train, val, test, conversion_key, v
                          n_layers_encoder=config["n_layers_encoder"],
                          n_layers_decoder=config["n_layers_decoder"],
                          n_layers_dense=config["n_layers_dense"],
-                         bidirectional_encoder=not config["no_bidirectional_encoder"],
+                         bidirectional_encoder=config["bidirectional_encoder"],
                          bidirectional_decoder=config["bidirectional_decoder"],
                          encoder_only_final=not config["encoder_all_steps"],
                          dropout=config["dropout"],

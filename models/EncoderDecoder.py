@@ -243,8 +243,6 @@ class EncoderDecoder():
         if params is None:
             # Retrieve all parameters from the network
             all_params = lasagne.layers.get_all_params(output_layer)
-            print("All params:")
-            print(all_params)
         else:
             # Use given list of parameters, a subset of all parameters
             all_params = params
@@ -311,13 +309,13 @@ class EncoderDecoder():
         return loss, cognacy_prior_factor, target_prediction_error, error_threshold
     
     def _combine_encoder_steps(self, encoder):
-        print(lasagne.layers.get_output_shape(encoder))
+        #print(lasagne.layers.get_output_shape(encoder))
         shuffled_encoder = DimshuffleLayer(encoder, (0, 2, 1))
-        print(lasagne.layers.get_output_shape(shuffled_encoder))
+        #print(lasagne.layers.get_output_shape(shuffled_encoder))
         encoder = lasagne.layers.DenseLayer(shuffled_encoder, num_units=1, num_leading_axes=2)
-        print(lasagne.layers.get_output_shape(encoder))
+        #print(lasagne.layers.get_output_shape(encoder))
         encoder = ReshapeLayer(encoder, shape=(self.batch_size, self.n_hidden))
-        print(lasagne.layers.get_output_shape(encoder))
+        #print(lasagne.layers.get_output_shape(encoder))
         return encoder
 
     def train(self, trainset, valset, n_epochs):
@@ -357,8 +355,8 @@ class EncoderDecoder():
                     # Prediction error threshold is mean+1 standard deviation
                     error_threshold = np.mean(self.prediction_errors) + self.cognacy_prior * np.std(self.prediction_errors)
                     loss, cognacy_prior, prediction_error, mean_error, predictions = self.loss_func(X_val, Y_val, mask_X_val, error_threshold)
-                    if self.cognacy_prior > 0.0:
-                        print(cognacy_prior, prediction_error, mean_error, np.mean(self.prediction_errors))
+                    #if self.cognacy_prior > 0.0:
+                        #print(cognacy_prior, prediction_error, mean_error, np.mean(self.prediction_errors))
                     loss_batches.append(loss)
                     # Calculate and store distance
                     _, _, _, distances, _ = self._compute_distance_batch_encoded(X_val_unnorm, Y_val, max_len_tar=self.max_len[1], voc_size_tar=self.voc_size[1], conversion_key=self.conversion_key, predictions=predictions)

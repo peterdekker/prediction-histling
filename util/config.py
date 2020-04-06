@@ -1,6 +1,7 @@
+from ete3 import TreeStyle, NodeStyle
 
 # Number of units in the hidden (recurrent) layer
-N_HIDDEN = 400
+N_HIDDEN = 100 # 400
 N_UNITS_PHYL = 400
 N_LAYERS_ENCODER = 1
 N_LAYERS_DECODER = 1
@@ -18,7 +19,7 @@ OPTIMIZER = "adagrad"  # choices=["adagrad", "adam", "sgd"]
 # All gradients above this will be clipped
 GRAD_CLIP = 100
 # Number of epochs to train the net
-N_EPOCHS = 15
+N_EPOCHS = 2
 GATED_LAYER_TYPE = "gru"  # ["lstm", "gru"]
 N_LAYERS_DENSE = 1
 PREDICTION = False
@@ -28,7 +29,6 @@ N_ITER_SEQ = 100
 CLUSTER = False
 VISUALIZE = False
 VISUALIZE_WEIGHTS = False
-VISUALIZE_ENCODING = False
 BASELINE = False
 BASELINE_CLUSTER = False
 COGNATE_DETECTION = False
@@ -46,7 +46,7 @@ LEARNING_RATE_DECAY = 1.0
 ADAPTIVE_LR = 0.0
 COGNACY_PRIOR = 1.0
 FILTER_TRAIN = 1.0
-EXPORT_WEIGHTS = False
+EXPORT_WEIGHTS = True
 # TRAIN_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
 # VALTEST_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
 TRAIN_PROTO = False
@@ -61,6 +61,17 @@ DATA_PATH = {"northeuralex": "data/northeuralex-cldf.csv",
 
 DATA_URL = {"northeuralex": "http://www.northeuralex.org/static/downloads/northeuralex-cldf.csv",
             "ielex": "TEST"}
+            
+# Define tree style
+ETE_TREE_STYLE = TreeStyle()
+ETE_TREE_STYLE.show_scale = False
+ETE_TREE_STYLE.show_leaf_name = False
+ETE_TREE_STYLE.force_topology = False
+ETE_TREE_STYLE.show_border = False
+ETE_TREE_STYLE.margin_top = ETE_TREE_STYLE.margin_bottom = ETE_TREE_STYLE.margin_right = ETE_TREE_STYLE.margin_left = 5
+
+ETE_NODE_STYLE = NodeStyle()
+ETE_NODE_STYLE["size"] = 0  # remove ugly balls from leaves
 
 config = {
     "n_hidden": N_HIDDEN,
@@ -87,7 +98,6 @@ config = {
     "cluster": CLUSTER,
     "visualize": VISUALIZE,
     "visualize_weights": VISUALIZE_WEIGHTS,
-    "visualize_encoding": VISUALIZE_ENCODING,
     "baseline": BASELINE,
     "baseline_cluster": BASELINE_CLUSTER,
     "cognate_detection": COGNATE_DETECTION,
@@ -100,7 +110,7 @@ config = {
     "validation": VALIDATION,
     "mean_subtraction": MEAN_SUBTRACTION,
     "no_standardization": NO_STANDARDIZATION,
-    "learning_rate_decay": LEARNING_RATE_DECAY,
+    "lr_decay": LEARNING_RATE_DECAY,
     "adaptive_lr": ADAPTIVE_LR,
     "cognacy_prior": COGNACY_PRIOR,
     "filter_train": FILTER_TRAIN,
@@ -113,6 +123,8 @@ config = {
     "sample_lang_pairs": SAMPLE_LANG_PAIRS,
     "data_url": DATA_URL,
     "data_path": DATA_PATH,
+    "ete_tree_style": ETE_TREE_STYLE,
+    "ete_node_style": ETE_NODE_STYLE,
 }
 
 # Set batch size to 1 for weight visualization:

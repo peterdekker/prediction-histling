@@ -97,7 +97,7 @@ def create_option_string(config):
     # All modes except 'cognate_detection' are excluded from option string
     # CD result files have to be identified (they are different, also non-cognates)
     # when performing cognate detection
-    omit = ["prediction", "cluster", "visualize", "visualize_weights", "visualize_encoding", "baseline", "baseline_cluster", "tune_cd", "tune_source_cd", "show_n_cog", "export_weights", "input_type", "grad_clip", "layers_encoder", "layers_decoder", "layers_dense", "adaptive_lr"]
+    omit = ["prediction", "cluster", "visualize", "visualize_weights", "baseline", "baseline_cluster", "tune_cd", "tune_source_cd", "show_n_cog", "export_weights", "input_type", "grad_clip", "layers_encoder", "layers_decoder", "layers_dense", "adaptive_lr"]
     # Only put languages in file name during phylogenetic word prediction
     if not config["phyl"]:
         omit.append("languages")
