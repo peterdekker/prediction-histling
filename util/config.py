@@ -2,7 +2,6 @@ from ete3 import TreeStyle, NodeStyle
 
 # Number of units in the hidden (recurrent) layer
 N_HIDDEN = 100 # 400
-N_UNITS_PHYL = 400
 N_LAYERS_ENCODER = 1
 N_LAYERS_DECODER = 1
 DROPOUT = 0.1
@@ -22,19 +21,8 @@ GRAD_CLIP = 100
 N_EPOCHS = 2
 GATED_LAYER_TYPE = "gru"  # ["lstm", "gru"]
 N_LAYERS_DENSE = 1
-PREDICTION = False
-SEQ = False
-PHYL = False
 N_ITER_SEQ = 100
-CLUSTER = False
-VISUALIZE = False
-VISUALIZE_WEIGHTS = False
-BASELINE = False
-BASELINE_CLUSTER = False
-COGNATE_DETECTION = False
 TUNE_CD = False
-# TUNE_SOURCE_CD = False
-SHOW_N_COG = False
 INPUT_TYPE = "asjp"  # choices=["asjp", "ipa"]
 INPUT_ENCODING = "character"  # ["phonetic", "character", "embedding"]
 OUTPUT_ENCODING = "character"  # fixed, there is no cmd line option for this
@@ -46,7 +34,7 @@ LEARNING_RATE_DECAY = 1.0
 ADAPTIVE_LR = 0.0
 COGNACY_PRIOR = 1.0
 FILTER_TRAIN = 1.0
-EXPORT_WEIGHTS = True
+EXPORT_WEIGHTS = False
 # TRAIN_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
 # VALTEST_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
 TRAIN_PROTO = False
@@ -75,7 +63,6 @@ ETE_NODE_STYLE["size"] = 0  # remove ugly balls from leaves
 
 config = {
     "n_hidden": N_HIDDEN,
-    "n_units_phyl": N_UNITS_PHYL,
     "n_layers_encoder": N_LAYERS_ENCODER,
     "n_layers_decoder": N_LAYERS_DECODER,
     "dropout": DROPOUT,
@@ -92,17 +79,8 @@ config = {
     "gated_layer_type": GATED_LAYER_TYPE,
     "n_layers_dense": N_LAYERS_DENSE,
     "prediction": PREDICTION,
-    "seq": SEQ,
-    "phyl": PHYL,
     "n_iter_seq": N_ITER_SEQ,
-    "cluster": CLUSTER,
-    "visualize": VISUALIZE,
-    "visualize_weights": VISUALIZE_WEIGHTS,
-    "baseline": BASELINE,
-    "baseline_cluster": BASELINE_CLUSTER,
-    "cognate_detection": COGNATE_DETECTION,
     "tune_cd": TUNE_CD,
-    "show_n_cog": SHOW_N_COG,
     "input_type": INPUT_TYPE,
     "input_encoding": INPUT_ENCODING,
     "output_encoding": OUTPUT_ENCODING,

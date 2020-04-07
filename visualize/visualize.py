@@ -112,24 +112,24 @@ def visualize_weights(context_vectors_path, langs, input_encoding, output_encodi
         target_raw = target_raw[:sample]
     # Convert list of NP arrays to one NP array
     vectors = np.array(vectors)
-    print("vectors" + str(vectors.shape))
+    #print("vectors" + str(vectors.shape))
     input_raw = np.array(input_raw)
-    print("input_raw" + str(input_raw.shape))
+    #print("input_raw" + str(input_raw.shape))
     target_raw = np.array(target_raw)
-    print("target_raw" + str(target_raw.shape))
+    #print("target_raw" + str(target_raw.shape))
     # Merge dimensions 1 and 2: width of feature matrix and dimensionality of network
     vectors = flatten_arr(vectors)
     input_raw = flatten_arr(input_raw)
     target_raw = flatten_arr(target_raw)
-    print("After flatten")
-    print("vectors" + str(vectors.shape))
+    #print("After flatten")
+    #print("vectors" + str(vectors.shape))
     input_raw = np.array(input_raw)
-    print("input_raw" + str(input_raw.shape))
+    #print("input_raw" + str(input_raw.shape))
     target_raw = np.array(target_raw)
-    print("target_raw" + str(target_raw.shape))
+    #print("target_raw" + str(target_raw.shape))
 
     n_words = len(input_words)
-    print("Number of words: " + str(n_words))
+    #print("Number of words: " + str(n_words))
 
     # ## Distance analysis
     # Compute pairwise distances between words inside one matrix: context, input and target
@@ -157,7 +157,7 @@ def visualize_weights(context_vectors_path, langs, input_encoding, output_encodi
                 # Save mean cluster size for this setting
                 mcs[mat_label] = np.min(cluster_sizes), np.median(cluster_sizes), np.max(cluster_sizes),
                 # Nicely print clusters
-                print(mat_label)
+                print(f"Clusters for {mat_label}:")
                 for cluster in clusters[mat_label].values():
                     print(" " + " ".join(cluster))
                 print("")
