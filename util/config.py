@@ -22,7 +22,7 @@ N_EPOCHS = 2
 GATED_LAYER_TYPE = "gru"  # ["lstm", "gru"]
 N_LAYERS_DENSE = 1
 N_ITER_SEQ = 100
-TUNE_CD = False
+#TUNE_CD = False
 INPUT_TYPE = "asjp"  # choices=["asjp", "ipa"]
 INPUT_ENCODING = "character"  # ["phonetic", "character", "embedding"]
 OUTPUT_ENCODING = "character"  # fixed, there is no cmd line option for this
@@ -78,9 +78,7 @@ config = {
     "n_epochs": N_EPOCHS,
     "gated_layer_type": GATED_LAYER_TYPE,
     "n_layers_dense": N_LAYERS_DENSE,
-    "prediction": PREDICTION,
     "n_iter_seq": N_ITER_SEQ,
-    "tune_cd": TUNE_CD,
     "input_type": INPUT_TYPE,
     "input_encoding": INPUT_ENCODING,
     "output_encoding": OUTPUT_ENCODING,

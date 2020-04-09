@@ -92,15 +92,16 @@ def get_baselines_path(output_dir, options):
     return os.path.join(output_dir, "base" + "." + options)
 
 
-def create_option_string(config):
+def create_option_string(config, cognate_detection):
     filename = ""
-    # All modes except 'cognate_detection' are excluded from option string
-    # CD result files have to be identified (they are different, also non-cognates)
-    # when performing cognate detection
+    # All modes except are excluded from option string
     omit = ["prediction", "cluster", "visualize", "visualize_weights", "baseline", "baseline_cluster", "tune_cd", "tune_source_cd", "show_n_cog", "export_weights", "input_type", "grad_clip", "layers_encoder", "layers_decoder", "layers_dense", "adaptive_lr"]
+    # Cognate detection is also added to filename, becauuse
+    # CD result files have to be identified (they are different, also non-cognates)
+    config["cognate_detection"] = cognate_detection
     # Only put languages in file name during phylogenetic word prediction
-    if not config["phyl"]:
-        omit.append("languages")
+    #if not config["phyl"]:
+    #    omit.append("languages")
     for key, value in sorted(config.items()):
         # Use only first letter of every word part
         key_short = shorten(key)
@@ -141,36 +142,6 @@ def plot_loss(losses, distances, plot_filename):
     
     plt.legend(handles=legend_info)
     plt.savefig(plot_filename)
-    plt.close()
-
-
-def plot_loss_phyl(losses_dict, distances_dict, plot_filename):
-    # Plot loss
-    legend_info = []
-    plt.title("Loss")
-    for lang_a in losses_dict:
-        for lang_b in losses_dict[lang_a]:
-            losses = losses_dict[lang_a][lang_b]
-            loss_x = [p[0] for p in losses]
-            loss_y = [p[1] for p in losses]
-            loss_line, = plt.plot(loss_x, loss_y, label=lang_a + "-" + lang_b)
-            legend_info.append(loss_line)
-    plt.legend(handles=legend_info)
-    plt.savefig(plot_filename + "_loss.png")
-    plt.close()
-    
-    # Plot loss
-    legend_info = []
-    plt.title("Edit distance")
-    for lang_a in distances_dict:
-        for lang_b in distances_dict[lang_a]:
-            distances = distances_dict[lang_a][lang_b]
-            dist_x = [p[0] for p in distances]
-            dist_y = [p[1] for p in distances]
-            distance_line, = plt.plot(dist_x, dist_y, label=lang_a + "-" + lang_b)
-            legend_info.append(distance_line)
-    plt.legend(handles=legend_info)
-    plt.savefig(plot_filename + "_dist.png")
     plt.close()
 
 

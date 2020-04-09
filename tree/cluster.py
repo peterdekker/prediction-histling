@@ -102,7 +102,7 @@ def cluster_languages(lang_pairs, distances_path, output_path, distance_col=2):
     
     # Calculate mean over all languages and output to file
     # Use original 'distance' dict, not 'matrix' which has been edited
-    mean_distance = np.mean(distance.values())
+    mean_distance = np.mean(list(distance.values()))
     print("Mean distance of all lang pairs: " + "{0:.4f}".format(mean_distance))
     with open(output_path + ".mean", "w") as mdist_file:
         mdist_file.write(str(mean_distance))

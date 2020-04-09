@@ -9,14 +9,14 @@ import random
 # Set random seed to make experiments repeatable
 random.seed(10)
 
-def initialize_program():
+def initialize_program(cognate_detection):
     print("Initializing program...")
     # Set LingPy input encoding (IPA or ASJP)
     lingpy.settings.rc(schema=config["input_type"])
     
     if not os.path.exists(config["results_dir"]):
         os.mkdir(config["results_dir"])
-    options = utility.create_option_string(config)
+    options = utility.create_option_string(config, cognate_detection)
 
     # Create paths
     #intersection_path = "data/ielex-northeuralex-0.9-intersection.tsv"

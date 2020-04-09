@@ -50,7 +50,7 @@ def download_if_needed(file_path, url):
             f.write(r.content)
 
 
-def load_data(train_corpus, valtest_corpus, languages, input_type, options):
+def load_data(train_corpus, valtest_corpus, languages, input_type, options, cognate_detection):
     # Set variables for train corpus
     input_path_train = config["data_path"][train_corpus]  # TODO: does not work yet for ielex-corr
     url_train = config["data_url"][train_corpus]
@@ -109,16 +109,16 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
     subs_sp_path = {}
     subs_st_path = {}
     context_vectors_path = {}
-
     train = {}
     val = {}
     test = {}
     conversion_key = {}
+    features = [pd.DataFrame(), pd.DataFrame()]
+
     # Max_len saved per language, rather than per language pair
     max_len = {}
+    voc_size = {}
 
-    features = [pd.DataFrame(), pd.DataFrame()]
-    voc_size = [0, 0]
     for lang_pair in lang_pairs:
         lang_a, lang_b = lang_pair
         context_vectors_path[lang_pair] = utility.create_path(
@@ -136,21 +136,21 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
         if os.path.exists(data_pickle):
             with open(data_pickle, "rb") as f:
                 print("Loading train/val/test sets from pickle, nothing generated...")
-                (train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], max_len[lang_pair[0]],
-                 max_len[lang_pair[1]], voc_size[0], voc_size[1]) = pickle.load(f)
+                (train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], max_len[lang_a],
+                 max_len[lang_b], voc_size[lang_a], voc_size[lang_b]) = pickle.load(f)
         else:
             print("Creating feature matrix for this specific language pair...")
-            features, max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1] = get_corpus_info(
+            features, max_len[lang_a], max_len[lang_b], voc_size[lang_a], voc_size[lang_b] = get_corpus_info(
                 [output_path_cognates_train, output_path_cognates_valtest], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], feature_matrix_phon=feature_matrix_phon)
             conversion_key[lang_pair] = create_conversion_key(features)
 
             print("Converting training corpus TSV file to data matrix...")
-            dataset_train, train_mean, train_std = create_data_matrix(tsv_path=output_path_cognates_train, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config[
-                                                                      "batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], excluded_concepts=excluded_concepts_training, cognate_detection=config["cognate_detection"])
+            dataset_train, train_mean, train_std = create_data_matrix(tsv_path=output_path_cognates_train, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_a], max_len[lang_b]), batch_size=config[
+                                                                      "batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], excluded_concepts=excluded_concepts_training, cognate_detection=cognate_detection)
 
             print("Converting val/test corpus TSV file to data matrix...")
-            dataset_valtest, _, _ = create_data_matrix(tsv_path=output_path_cognates_valtest, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), voc_size=voc_size, batch_size=config[
-                                                       "batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], cognate_detection=config["cognate_detection"], valtest=True, train_mean=train_mean, train_std=train_std)
+            dataset_valtest, _, _ = create_data_matrix(tsv_path=output_path_cognates_valtest, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), batch_size=config[
+                                                       "batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], cognate_detection=cognate_detection, valtest=True, train_mean=train_mean, train_std=train_std)
 
             t_set_size = dataset_train.get_size()
             vt_set_size = dataset_valtest.get_size()
@@ -184,7 +184,7 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options):
             # Pickle train/val/test/sets
             with open(data_pickle, "wb") as f:
                 pickle.dump((train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair],
-                             max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[0], voc_size[1]), f)
+                             max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[lang_a], voc_size[lang_b]), f)
     print("Done loading data.")
     return (results_path, output_path_cognates_train, output_path_cognates_valtest, context_vectors_path, subs_sp_path, subs_st_path, lang_pairs,
             train, val, test, max_len, conversion_key, voc_size, feature_matrix_phon)
@@ -511,7 +511,7 @@ def create_embedding(lang, tsv_paths_list):
     return df
 
 
-def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_size, fixed_length_x=None,
+def create_data_matrix(tsv_path, lang_pair, features, max_len, batch_size, fixed_length_x=None,
                        fixed_length_y=None, mean_subtraction=False, feature_standardization=False, excluded_concepts=[],
                        only_cognates=False, cognate_detection=False, valtest=False, train_mean=None, train_std=None):
 
