@@ -62,7 +62,7 @@ def cluster_languages(lang_pairs, distances_path, output_path, distance_col=2):
                 distance[(lang_a, lang_b)] = dist
     max_dist = max(distance.values())
     n_langs = len(languages)
-    print(sorted(distance.items(), key=lambda x: x[0]))
+    #print(sorted(distance.items(), key=lambda x: x[0]))
     matrix = np.zeros((n_langs, n_langs))
     for ix_a, lang_a in enumerate(languages):
         row = []
@@ -97,8 +97,10 @@ def cluster_languages(lang_pairs, distances_path, output_path, distance_col=2):
             distances_tex.write(languages_short[row] + "&" + "&".join(dists_string) + "\\\\\n")
     
     # Perform hierarchical clustering
+    return_trees = []
     for alg, label in [(upgma, "UPGMA"), (neighbor, "Neighbour joining")]:
-        cluster_hierarchical(output_path, matrix, languages_short, cluster_alg=alg, cluster_alg_label=label)
+        tree = cluster_hierarchical(output_path, matrix, languages_short, cluster_alg=alg, cluster_alg_label=label)
+        return_trees.append(tree)
     
     # Calculate mean over all languages and output to file
     # Use original 'distance' dict, not 'matrix' which has been edited
@@ -107,8 +109,9 @@ def cluster_languages(lang_pairs, distances_path, output_path, distance_col=2):
     with open(output_path + ".mean", "w") as mdist_file:
         mdist_file.write(str(mean_distance))
     
-    with open(distances_path + ".txt", "r") as f:
-        print(f.read())         
+    #with open(distances_path + ".txt", "r") as f:
+    #    print(f.read())
+    return return_trees     
 
 
 # Create phylogenetic trees and output to file
