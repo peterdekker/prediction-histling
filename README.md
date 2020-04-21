@@ -1,39 +1,34 @@
 # Word prediction in historical linguistics
-This is a Jupyter notebook and Python library to demonstrate the use of word prediction using deep learning as an aid in historical linguistics.
+This is a Jupyter notebook and Python library to demonstrate the use of word prediction using deep learning as an aid in historical linguistics. This notebook is based on [master thesis work by Peter Dekker](http://peterdekker.eu/projects/#mscthesis)
 
 ## Installation
 ### Linux/Mac
 
-* Chaining search is a Jupyter notebook, which depends on Python 3, pip (PyPi) and venv. Please first install Python 3, pip and development hearders for libxml2, libz and libopenblas via your package management system. E.g. for Ubuntu:
+* This Jupyter noteboo depends on Python 3, pip (PyPi) and venv. Please first install Python 3, pip and development hearders for libxml2, libz and libopenblas via your package management system. E.g. for Ubuntu:
  ```
  sudo apt install python3-pip libxml2-dev libopenblas-dev libz-dev
  ```
 
-* Now, run our install script in a terminal, as a normal user (without `sudo`):
-   ```
-   ./install.sh
-   ```
-   If permission is denied, issue the following command once:
-   ```
-   sudo chmod +x install.sh
-   ```
-   and then run the install script.
+* Install the Python dependencies systemwide, using the `pip3` package manager as root. First install a number of packages separately:
+```
+sudo pip3 install wheel cython numpy
+sudo pip3 install -r requirements.txt
+```
 
-* Every time you want to run the notebook, run the `run.sh` script as a normal user (without `sudo`):
+* Every time you want to run the notebook, change to the prediction-histling directory (the directory where this README is located), and run the Jupyter notebook as a normal user:
    ```
-   ./run.sh
+   cd PATH/TO/PREDICTION-HISTLING
+   jupyter notebook
    ```
-   A browser window will open. Now, click `Word prediction in historical linguistics.ipynb`. The first time you use it, pick the kernel `ph-env` from menu `Kernel > Change kernel > ph-env`.
+   A browser window will open. Now, click `Word prediction in historical linguistics.ipynb`.
 
-
-### Windows
-
-Chaining search can be easily installed using our install script. This will install all prerequisites for Chaining search.
+### Windows (experimental
+Running this notebook on Windows is not fully tested. If you run into any problems, [file an issue](https://github.com/peterdekker/prediction-histling/issues).
 
 * Open a command prompt (Windows key + R, then issue "cmd").
-* Change to the Chaining search directory (the directory where this README is located):
+* Change to the prediction-histling directory (the directory where this README is located):
  ```
- cd CHAINING\SEARCH\DIRECTORY
+ cd PATH\TO\PREDICTION-HISTLING
  ```
 * If you don't have Python yet, install it now:
  ```
@@ -41,24 +36,17 @@ Chaining search can be easily installed using our install script. This will inst
  ```
 * Close the command prompt after this (required!)
 
-Now we're ready to install our notebook:
-* Open a command prompt (again: Windows key + R, then type "cmd").
-* Change to the Chaining search directory (the directory where this README is located): 
-* Invoke the install script:
- ```
- install.bat
- ```
 
-Every time you would like to run chaining search, invoke our run script:
+* Install the Python dependencies using the `pip` package manager. First install a number of packages separately:
+```
+pip install wheel cython numpy
+pip install -r requirements.txt
+```
 
-* Open a command prompt (Windows key + R, then issue `cmd`).
-* Change to the Chaining search directory (the directory where this README is located):
- ```
- cd CHAINING\SEARCH\DIRECTORY
- ```
-* Invoke the run script:
- ```
- run.bat
- ```
-* A browser window will open. Now, click `Word prediction in historical linguistics.ipynb`. The first time you use it, pick the kernel `ph-env` from menu `Kernel > Change kernel > ph-env`.
+* Every time you want to run the notebook, change to prediction-histling directory, and run the Jupyter notebook as a normal user:
+   ```
+   cd PATH\TO\PREDICTION-HISTLING
+   jupyter notebook
+   ```
+   A browser window will open. Now, click `Word prediction in historical linguistics.ipynb`.
 
