@@ -28,24 +28,23 @@ import numpy as np
 from lingpy.algorithm.clustering import upgma, neighbor
 from ete3 import Tree, TreeStyle, NodeStyle, TextFace
 from scipy.spatial.distance import pdist, squareform
-from util.config import config
 import os
 
 
 # Method to hierarchically cluster phonemes, represented in a phoneme encoding
-def cluster_phonemes_encoding(encoding_matrix, phonemes, encoding_name):
+def cluster_phonemes_encoding(encoding_matrix, phonemes, encoding_name, config):
     # Computer pairwise distance matrix
     # using euclidean distance
     metric = "euclidean"
     dist_matrix = squareform(pdist(encoding_matrix, metric))
     output_path = os.path.join(config["results_dir"], f"enc_{encoding_name}_{metric}")
-    tree = cluster_hierarchical(output_path, dist_matrix, phonemes, cluster_alg=neighbor, cluster_alg_label="Neighbour joining", phonemes_encoding_tree=True)
+    tree = cluster_hierarchical(output_path, dist_matrix, phonemes, cluster_alg=neighbor, cluster_alg_label="Neighbour joining", config=config, phonemes_encoding_tree=True)
     return tree
 
 
 # Method used to hierarchically cluster word prediction distances from file,
 # where both prediction directions for a language pair have to be averaged
-def cluster_languages(lang_pairs, distances_path, output_path, distance_col=2):
+def cluster_languages(lang_pairs, distances_path, output_path, config, distance_col=2):
     languages = list(set([e for pair in lang_pairs for e in pair]))
     distance = {}
     with open(distances_path + ".txt", "r") as distance_file:
@@ -99,7 +98,7 @@ def cluster_languages(lang_pairs, distances_path, output_path, distance_col=2):
     # Perform hierarchical clustering
     return_trees = []
     for alg, label in [(upgma, "UPGMA"), (neighbor, "Neighbour joining")]:
-        tree = cluster_hierarchical(output_path, matrix, languages_short, cluster_alg=alg, cluster_alg_label=label)
+        tree = cluster_hierarchical(output_path, matrix, languages_short, cluster_alg=alg, config=config, cluster_alg_label=label)
         return_trees.append(tree)
     
     # Calculate mean over all languages and output to file
@@ -115,7 +114,7 @@ def cluster_languages(lang_pairs, distances_path, output_path, distance_col=2):
 
 
 # Create phylogenetic trees and output to file
-def cluster_hierarchical(output_path, matrix, species_names, cluster_alg, cluster_alg_label, phonemes_encoding_tree=False):
+def cluster_hierarchical(output_path, matrix, species_names, cluster_alg, cluster_alg_label, config, phonemes_encoding_tree=False):
     print(f" - Creating tree using {cluster_alg_label}, saving to .nw and .pdf")
     # Turn off distances if this is a phonemes encoding tree
     newick_string = cluster_alg(matrix, species_names, distances= (not phonemes_encoding_tree))

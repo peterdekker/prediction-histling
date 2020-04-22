@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
-from util.config import config
+
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import cosine
 from sklearn.metrics.pairwise import pairwise_distances
@@ -33,7 +33,7 @@ from collections import defaultdict
 
 
 # from sklearn.manifold import TSNE
-def show_output_substitutions(results_path, subs_st_path, subs_sp_path):
+def show_output_substitutions(results_path, subs_st_path, subs_sp_path, config):
     source_target_subs = defaultdict(int)
     source_predicted_subs = defaultdict(int)
     df = pd.read_csv(results_path + ".tsv", sep="\t")
@@ -89,7 +89,7 @@ def dim_reduction(matrix):
 
 
 # Wrapper around plot(), specifically for plotting encoding PCA plots
-def visualize_encoding(matrix_red, phonemes, label):
+def visualize_encoding(matrix_red, phonemes, label, config):
     print(f" - Create PCA plot for encoding {label}.")
     inp_filename = os.path.join(config["results_dir"], f"{label}")
     plot(matrix_red, phonemes, "", inp_filename, encoding_plot=True)

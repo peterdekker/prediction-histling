@@ -2,14 +2,13 @@
 import lingpy
 import os
 
-from util.config import config
 from util import utility
 import random
 
 # Set random seed to make experiments repeatable
 random.seed(10)
 
-def initialize_program(cognate_detection):
+def initialize_program(cognate_detection, config):
     print("Initializing program...")
     # Set LingPy input encoding (IPA or ASJP)
     lingpy.settings.rc(schema=config["input_type"])

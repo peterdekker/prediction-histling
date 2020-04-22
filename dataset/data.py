@@ -19,7 +19,6 @@ from dataset.Dataset import Dataset
 from collections import defaultdict
 from cognatedetection import cd
 from util import utility
-from util.config import config
 
 
 import itertools
@@ -50,7 +49,7 @@ def download_if_needed(file_path, url):
             f.write(r.content)
 
 
-def load_data(train_corpus, valtest_corpus, languages, input_type, options, cognate_detection):
+def load_data(train_corpus, valtest_corpus, languages, input_type, options, cognate_detection, config):
     # Set variables for train corpus
     input_path_train = config["data_path"][train_corpus]  # TODO: does not work yet for ielex-corr
     url_train = config["data_url"][train_corpus]
@@ -455,7 +454,7 @@ def create_one_hot_matrix(tokens_list):
     return df
 
 
-def create_embedding(lang, tsv_paths_list):
+def create_embedding(lang, tsv_paths_list, config):
     print(" - Creating embedding for " + lang)
     # Re-use existing embedding file if possible
     corpora_names = [t.split(".tsv")[0].split("/")[-1] for t in tsv_paths_list]
@@ -694,7 +693,7 @@ def create_conversion_key(features):
     return conversion_key
 
 
-def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold):
+def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold, config):
     print("Calculate number of cognates per language...")
     df = pd.read_csv(input_file, sep="\t")
     concepts = df["CONCEPT"].unique()
