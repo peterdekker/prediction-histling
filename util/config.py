@@ -1,7 +1,7 @@
 from ete3 import TreeStyle, NodeStyle
 
 # Number of units in the hidden (recurrent) layer
-N_HIDDEN = 100 # 400
+N_HIDDEN = 400
 N_LAYERS_ENCODER = 1
 N_LAYERS_DECODER = 1
 DROPOUT = 0.1
@@ -18,7 +18,7 @@ OPTIMIZER = "adagrad"  # choices=["adagrad", "adam", "sgd"]
 # All gradients above this will be clipped
 GRAD_CLIP = 100
 # Number of epochs to train the net
-N_EPOCHS = 2
+N_EPOCHS = 15
 GATED_LAYER_TYPE = "gru"  # ["lstm", "gru"]
 N_LAYERS_DENSE = 1
 N_ITER_SEQ = 100

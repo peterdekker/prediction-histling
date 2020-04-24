@@ -256,6 +256,7 @@ def plot(vectors_dim_red, input_words, title, filename, target_words_label=None,
     if len(title) > 0:
         plt.title(title)
     plt.savefig(filename)
+    plt.show()
     plt.close()
 
 

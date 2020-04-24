@@ -110,7 +110,8 @@ def cognate_detection_binary(results_file, distance, thresholds):
 # TODO: re-add infomap clustering?
 def cognate_detection_cluster(lang_pairs, results_dir, options, use_distance="prediction", methods=[("Flat UPGMA", flat_upgma), ("Link clustering", link_clustering), ("MCL", mcl)], thresholds=[0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]):
     languages = list(set([e for pair in lang_pairs for e in pair]))
-    
+    gold_column = "COGNATES_LEXSTAT" # TODO: change to COGNATES_IELEX once intersection file is working
+
     if use_distance == "prediction":
         dist_label = "DISTANCE_T_P"
     elif use_distance == "source":
@@ -126,7 +127,6 @@ def cognate_detection_cluster(lang_pairs, results_dir, options, use_distance="pr
         concepts_path = utility.get_results_path(lang_b, lang_a, results_dir, options)
         df = pd.read_csv(concepts_path + ".tsv", sep="\t")
     concepts = list(df["CONCEPT"])
-
     max_dist = 1.0
     n_langs = len(languages)
     # Distance is temporary matrix
@@ -149,8 +149,8 @@ def cognate_detection_cluster(lang_pairs, results_dir, options, use_distance="pr
                     distance[concept][(lang_a, lang_b)] = dist
                     forms[concept][lang_a] = row["INPUT"].replace(" ", "")
                     forms[concept][lang_b] = row["TARGET"].replace(" ", "")
-                    class0 = row["COGNATES_IELEX0"]
-                    class1 = row["COGNATES_IELEX1"]
+                    class0 = row[f"{gold_column}0"]
+                    class1 = row[f"{gold_column}1"]
                     if not pd.isnull(class0):
                         cog_class_gold[concept][class0].add(lang_a)
                     if not pd.isnull(class1):
@@ -171,8 +171,8 @@ def cognate_detection_cluster(lang_pairs, results_dir, options, use_distance="pr
                     distance[concept][(lang_b, lang_a)] = dist
                     forms[concept][lang_b] = row["INPUT"].replace(" ", "")
                     forms[concept][lang_a] = row["TARGET"].replace(" ", "")
-                    class0 = row["COGNATES_IELEX0"]
-                    class1 = row["COGNATES_IELEX1"]
+                    class0 = row[f"{gold_column}0"]
+                    class1 = row[f"{gold_column}1"]
                     if not pd.isnull(class0):
                         cog_class_gold[concept][class0].add(lang_b)
                     if not pd.isnull(class1):
@@ -205,12 +205,12 @@ def cognate_detection_cluster(lang_pairs, results_dir, options, use_distance="pr
                     matrix[concept][ix_a, ix_b] = max_dist
                 # print("Pair " + str((lang_a,lang_b)) + "unavailable. No alternative, using max dist.")
     assert len(matrix[concepts[0]]) == len(languages)
-    
     results_df = pd.DataFrame(columns=["Method", "Precision", "Recall", "F"])
     
     for label, method in methods:
         for threshold in thresholds:
             method_threshold = label + "-" + str(threshold)
+            print(f"\nMethod: {method_threshold}")
             # Arrays to hold scores for all concepts
             precision_scores = []
             recall_scores = []
@@ -272,76 +272,6 @@ def cognate_detection_cluster(lang_pairs, results_dir, options, use_distance="pr
     return results_df
 
 
-def evaluation(results_table, existing_eval_table=None, tune=None, lang_pair=None):
-    # We can only compare if ielex manual cognate judgments are available:
-    columns = list(results_table)
-    if "COGNATES_IELEX" not in columns:
-        print("No cognate detection evaluation performed: no gold standard.")
-        return
-    if tune == "prediction":
-        cognate_columns = [col for col in columns if col.startswith('COGNATES_WP')]
-    elif tune == "source":
-        cognate_columns = [col for col in columns if col.startswith('COGNATES_SOURCE')]
-    else:
-        cognate_columns = [col for col in columns if col.startswith('COGNATES_') and col != "COGNATES_IELEX"]
-    eval_dict = defaultdict(lambda : defaultdict(int))
-    # Process different cognate judgments one by one
-    for col in cognate_columns:
-        name = col.lstrip("COGNATES_")
-        judgments = results_table[col]
-        manual = results_table["COGNATES_IELEX"]
-        
-        # Compute precision, recall, accuracy and F-score
-        assert len(judgments) == len(manual)
-        total = len(judgments)
-        tp = 0
-        tn = 0
-        fp = 0
-        fn = 0
-        for pos in np.arange(total):
-            if judgments[pos] == 1 and manual[pos] == 1:
-                tp += 1
-            if judgments[pos] == 0 and manual[pos] == 0:
-                tn += 1
-            if judgments[pos] == 1 and manual[pos] == 0:
-                fp += 1
-            if judgments[pos] == 0 and manual[pos] == 1:
-                fn += 1
-        
-        precision = tp / float(tp + fp) if (tp + fp) > 0 else 0
-        recall = tp / float(tp + fn) if (tp + fp) > 0 else 0
-        accuracy = (tp + tn) / float(total)
-        F = 2 * ((precision * recall) / float(precision + recall)) if precision > 0 and recall > 0 and (precision + recall) > 0 else 0
-        
-        # If tuning, only look at F
-        if tune:
-            F_label = "F"
-            F_label += "_" + lang_pair[0] + "_" + lang_pair[1]
-            eval_dict[F_label][name] = F
-        # Normale cognate detection: look at all metrics
-        else:
-            eval_dict["precision"][name] = precision
-            eval_dict["recall"][name] = recall
-            eval_dict["accuracy"][name] = accuracy
-            eval_dict["F"][name] = F
-    
-    if existing_eval_table is not None:
-        # If there is an existing evalution table: add columns to end
-        eval_table = existing_eval_table
-        for key in eval_dict:
-            eval_table[key] = pd.Series(eval_dict[key])
-    else:
-        # Create new table from dict
-        eval_table = pd.DataFrame(eval_dict)
-    
-    best_param = None
-    # Only return best parameter if we are not working with different language pairs
-    if tune and not lang_pair:
-        best_entry = eval_table.loc[eval_table['F'].idxmax()]
-        best_param = float(best_entry.name.split("_")[-1])
-    return eval_table, best_param
-
-
 # LexStat cognate detection on entire dataset
 def cognate_detection_lexstat(output_path, output_cognates_path, input_type):
     print(" - Detect cognates in entire dataset using LexStat.")
@@ -363,7 +293,6 @@ def cognate_detection_lexstat(output_path, output_cognates_path, input_type):
     print(f"Output cognates to {output_cognates_path}.")
     output_cognates_path_no_extension = output_cognates_path.split(".")[0]
     lex.output('tsv', filename=output_cognates_path_no_extension, ignore="all", prettify=False)
-
     
 # Average F scores over all language pairs
 def best_param_languages(eval_table):
