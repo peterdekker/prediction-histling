@@ -1,5 +1,5 @@
 # Word prediction in historical linguistics
-This is a Jupyter notebook and Python library to demonstrate the use of word prediction using deep learning as an aid in historical linguistics. This notebook is based on [master thesis work by Peter Dekker](http://peterdekker.eu/projects/#mscthesis)
+This is a Jupyter notebook and Python library to demonstrate the use of word prediction using deep learning as an aid in historical linguistics. This notebook is based on [master thesis work by Peter Dekker](http://peterdekker.eu/projects/#mscthesis).
 
 ## Installation
 ### Linux/Mac
