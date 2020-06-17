@@ -26,7 +26,7 @@
 
 import numpy as np
 from lingpy.algorithm.clustering import upgma, neighbor
-from ete3 import Tree, TreeStyle, NodeStyle, TextFace
+from ete3 import Tree, TextFace
 from scipy.spatial.distance import pdist, squareform
 import os
 
