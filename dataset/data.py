@@ -140,7 +140,7 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options, cogn
         else:
             print("Creating feature matrix for this specific language pair...")
             features, max_len[lang_a], max_len[lang_b], voc_size[lang_a], voc_size[lang_b] = get_corpus_info(
-                [output_path_cognates_train, output_path_cognates_valtest], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], feature_matrix_phon=feature_matrix_phon)
+                [output_path_cognates_train, output_path_cognates_valtest], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], config=config, feature_matrix_phon=feature_matrix_phon)
             conversion_key[lang_pair] = create_conversion_key(features)
 
             print("Converting training corpus TSV file to data matrix...")
@@ -382,7 +382,7 @@ def _fill_word(word_tokens, max_length):
     return filled_word
 
 
-def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, feature_matrix_phon=None):
+def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, config, feature_matrix_phon=None):
     tokens_list_corpora = []
     max_len_corpora = []
     voc_size_corpora = []
@@ -432,7 +432,7 @@ def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, feat
     elif input_encoding == "character":
         feature_matrix_x = create_one_hot_matrix(tokens_list_combined_x)
     elif input_encoding == "embedding":
-        feature_matrix_x = create_embedding(lang_pair[0], paths_list)
+        feature_matrix_x = create_embedding(lang_pair[0], paths_list, config)
 
     if output_encoding == "phonetic":
         # Reduce feature matrix to just tokens used in this language
@@ -440,7 +440,7 @@ def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, feat
     elif output_encoding == "character":
         feature_matrix_y = create_one_hot_matrix(tokens_list_combined_y)
     elif output_encoding == "embedding":
-        feature_matrix_y = create_embedding(lang_pair[1], paths_list)
+        feature_matrix_y = create_embedding(lang_pair[1], paths_list, config)
 
     feature_matrix = (feature_matrix_x, feature_matrix_y)
     voc_size_combined = (feature_matrix_x.shape[1], feature_matrix_y.shape[1])

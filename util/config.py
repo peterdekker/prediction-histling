@@ -24,7 +24,7 @@ N_LAYERS_DENSE = 1
 N_ITER_SEQ = 100
 #TUNE_CD = False
 INPUT_TYPE = "asjp"  # choices=["asjp", "ipa"]
-INPUT_ENCODING = "character"  # ["phonetic", "character", "embedding"]
+INPUT_ENCODING = "embedding"  # ["phonetic", "character", "embedding"]
 OUTPUT_ENCODING = "character"  # fixed, there is no cmd line option for this
 ENCODER_DECODER_HID_INIT = False
 VALIDATION = False
