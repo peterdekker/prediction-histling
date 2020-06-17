@@ -33,7 +33,7 @@ from collections import defaultdict
 
 
 # from sklearn.manifold import TSNE
-def show_output_substitutions(results_path, subs_st_path, subs_sp_path, config):
+def show_output_substitutions(results_path, subs_st_path, subs_sp_path, lang1, lang2, config):
     source_target_subs = defaultdict(int)
     source_predicted_subs = defaultdict(int)
     df = pd.read_csv(results_path + ".tsv", sep="\t")
@@ -52,7 +52,7 @@ def show_output_substitutions(results_path, subs_st_path, subs_sp_path, config):
     joined_df = sp_df.join(st_df, how="outer")
     joined_df = joined_df.sort_values("Source-prediction", ascending=False)
     print(joined_df)
-    joined_df.to_csv(os.path.join(config["results_dir"], "subs.tex"), sep="&", line_terminator="\\\\\n", float_format="%.0f")
+    joined_df.to_csv(os.path.join(config["results_dir"], f"subs-{lang1}-{lang2}.tex"), sep="&", line_terminator="\\\\\n", float_format="%.0f")
     # write_subs(source_target_subs, subs_st_path+".tex")
     # write_subs(source_predicted_subs, subs_sp_path+".tex")
 
