@@ -1,4 +1,6 @@
 .*
+*.tex
+*.log
 data/
 data_corrected/
 ph-env/
