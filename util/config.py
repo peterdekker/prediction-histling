@@ -38,6 +38,7 @@ EXPORT_WEIGHTS = False
 # TRAIN_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
 # VALTEST_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
 TRAIN_PROTO = False
+VIEW_EMBEDDING_IPA = True
 
 # ## Other arguments
 RESULTS_DIR = "output"
@@ -101,6 +102,7 @@ config = {
     "data_path": DATA_PATH,
     "ete_tree_style": ETE_TREE_STYLE,
     "ete_node_style": ETE_NODE_STYLE,
+    "view_embedding_ipa": VIEW_EMBEDDING_IPA
 }
 
 # Set batch size to 1 for weight visualization:

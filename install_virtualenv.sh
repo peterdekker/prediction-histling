@@ -17,7 +17,7 @@ pip3 install -r requirements.txt
 #jupyter nbextensions_configurator enable --sys-prefix
 # Collapsible headings extension is enabled
 #jupyter nbextension enable collapsible_headings/main
-# Remove (possibly) existing Jupyter kernel with name env
+# Remove (possibly) existing Jupyter kernel with name ph-env
 rm -rf ~/.local/share/jupyter/kernels/ph-env
 # Kernel is configured to work with the virtual environment
 python3 -m ipykernel install --user --name ph-env

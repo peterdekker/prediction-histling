@@ -16,7 +16,13 @@
 #-------------------------------------------------------------------------------
 
 # Script to convert ASJP to IPA using input prompt
-from asjp2ipa import asjp_to_ipa
+
+import sys, os
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir) 
+
+from util.asjp2ipa import asjp_to_ipa
 
 while(True):
     input_word = input("String to convert from ASJP to IPA: ")

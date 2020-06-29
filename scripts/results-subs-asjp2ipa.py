@@ -18,9 +18,15 @@
 # Script to convert rsubstituion table for the paper, in ASJP, to IPA
 # Input: LaTeX file with four columns: Substitution 1,Substitution 2,Source-prediction frequency,Source-target frequency
 
+import sys, os
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir) 
+
+from util.asjp2ipa import asjp_to_ipa
+
 import pandas as pd
 from astropy.table import Table
-from asjp2ipa import asjp_to_ipa
 
 filename = "20200617-subs"
 

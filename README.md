@@ -26,7 +26,7 @@ sudo pip3 install -r requirements.txt
    ```
    A browser window will open. Now, click `Word prediction in historical linguistics.ipynb`.
 
-### Windows (experimental
+### Windows (experimental)
 Running this notebook on Windows is not fully tested. If you run into any problems, [file an issue](https://github.com/peterdekker/prediction-histling/issues).
 
 * Open a command prompt (Windows key + R, then issue "cmd").

@@ -18,9 +18,15 @@
 # Helper function for all results-*-asjp2ipa.py scripts
 # For this script to work, CLTS data directory must be set: https://github.com/cldf-clts/pyclts#install
 
+
+import os
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+
 from pyclts import CLTS
 
-clts = CLTS("asdf")
+# Use CLTS installation in parent directory, which is git subtree of https://github.com/cldf-clts/clts
+clts = CLTS(f"{parentdir}/clts")
 asjp = clts.transcriptionsystem('asjpcode')
 
 def asjp_to_ipa(word):
