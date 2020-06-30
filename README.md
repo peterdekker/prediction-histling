@@ -8,7 +8,7 @@ Any questions or problems?
 ## Installation
 ### Linux/Mac
 
-* This Jupyter noteboo depends on Python 3, pip (PyPi) and venv. Please first install Python 3, pip and development hearders for libxml2, libz and libopenblas via your package management system. E.g. for Ubuntu:
+* This Jupyter notebook depends on Python 3, pip (PyPi) and venv. Please first install Python 3, pip and development hearders for libxml2, libz and libopenblas via your package management system. E.g. for Ubuntu:
  ```
  sudo apt install python3-pip libxml2-dev libopenblas-dev libz-dev
  ```
