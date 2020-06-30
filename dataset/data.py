@@ -44,7 +44,10 @@ def download_if_needed(file_path, url):
         p.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, 'wb') as f:
             print(f"Downloading dataset from {url}")
-            r = requests.get(url, allow_redirects=True)
+            try:
+                r = requests.get(url, allow_redirects=True)
+            except requests.exceptions.RequestException as e:  # This is the correct syntax
+                raise SystemExit(e)
             # Write downloaded content to file
             f.write(r.content)
 

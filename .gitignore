@@ -1,9 +1,6 @@
 .*
 *.tex
 *.log
-data/
-data_corrected/
-ph-env/
 .ipynb_checkpoints/
 __pycache__/
 .vscode/.ropeproject/config.py
