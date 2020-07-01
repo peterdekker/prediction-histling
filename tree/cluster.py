@@ -128,7 +128,7 @@ def cluster_hierarchical(output_path, matrix, species_names, cluster_alg, cluste
             node.img_style["size"] = 0
         if node.is_leaf():
             # Add bit of extra space between leaf branch and leaf label
-            name_face = TextFace(f" {node.name}", fgcolor="black", fsize=14)
+            name_face = TextFace(f" {node.name}", fgcolor="black", ftype="Charis SIL Compact", fsize=14)
             node.add_face(name_face, column=0, position='branch-right')
             
     # Output to pdf and nw
