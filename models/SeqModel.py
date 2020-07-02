@@ -21,6 +21,11 @@ from dataset import data
 from collections import defaultdict
 import numpy as np
 import pandas as pd
+### Hack, because seqlearn does reference old six inside sklearn
+import six
+import sys
+sys.modules['sklearn.externals.six'] = six
+###
 from seqlearn.perceptron import StructuredPerceptron
 import time
 

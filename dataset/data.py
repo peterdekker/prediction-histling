@@ -322,7 +322,7 @@ def word_surface(encoded_word, conversion_key, encoding, mask=None):
     if encoding == "phonetic" or encoding == "embedding":
         # In this case, conversion_key is dat dict from feature strings to tokens
         for t in np.arange(word_length):
-            encoded_token = tuple(encoded_word[t])
+            encoded_token = tuple(encoded_word[t]) 
             if encoded_token in conversion_key:
                 surface_tokens.append(conversion_key[encoded_token])
             else:

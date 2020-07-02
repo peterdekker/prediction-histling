@@ -91,7 +91,7 @@ class Subset():
         input_words = []
         target_words = []
         for ex in np.arange(self.subset_size):
-            input_word, _ = data.word_surface(self.matrix_x[ex], conversion_key[0], input_encoding)
+            input_word, _ = data.word_surface(self.matrix_x_unnormalized[ex], conversion_key[0], input_encoding)
             target_word, _ = data.word_surface(self.matrix_y[ex], conversion_key[1], output_encoding)
             
             input_cut = [t for t in input_word if t != "."]

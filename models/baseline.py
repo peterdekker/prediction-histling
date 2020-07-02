@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (C) 2018 Peter Dekker
+# Copyright (C) 2020 Peter Dekker
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,11 +18,20 @@
 import numpy as np
 import pandas as pd
 import sys
+
+import os
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir) 
+
+
 from util import utility
+N_ITER = 10
 
+# Based on code by Gerhard Jäger
 
-# Baseline code by Gerhard Jaeger
 def compute_baseline(lang_a, lang_b, sounds, training, testing, baselines_path):
+    print(f"{lang_a}-{lang_b}:")
     # Merge input and output sounds sets
     sounds = list(set(sounds[0] + sounds[1]))
     levdict = pd.DataFrame(-1., index=sounds, columns=sounds)
@@ -33,7 +42,7 @@ def compute_baseline(lang_a, lang_b, sounds, training, testing, baselines_path):
     
     pmi = estimatePMI(training, levdict, -1, -1, sounds)
 
-    for _ in range(10):
+    for _ in range(N_ITER):
         pmi = estimatePMI(training, pmi, gp1, gp2, sounds)
 
     alignments = np.array([nw(w1, w2, pmi, gp1, gp2)[1]
@@ -54,8 +63,9 @@ def compute_baseline(lang_a, lang_b, sounds, training, testing, baselines_path):
                    for (x, y) in testing.values[:, [2, 1]]])
     baseline_str = str(np.mean(baseline))
     fo_model_str = str(np.mean(model))
-    print('baseline: ' + baseline_str)
-    print('first order model: ' + fo_model_str)
+    print('Source prediction: ' + baseline_str)
+    print('PMI-based: ' + fo_model_str)
+    print("")
     # Write distances to file
     with open(baselines_path, "a") as f:
         f.write(lang_a + "," + lang_b + "," + baseline_str + "," + fo_model_str + "\n")
@@ -82,7 +92,7 @@ def nw(x, y, lodict, gp1, gp2):
         pointers[0, j] = 2
     for i in range(1, n + 1):
         for j in range(1, m + 1):
-            match = dp[i - 1, j - 1] + lodict.ix[x[i - 1]][y[j - 1]]
+            match = dp[i - 1, j - 1] + lodict.loc[x[i - 1]][y[j - 1]]
             insert = dp[i - 1, j] + (gp2 if pointers[i - 1, j] == 1 else gp1)
             delet = dp[i, j - 1] + (gp2 if pointers[i, j - 1] == 2 else gp1)
             dp[i, j] = max([match, insert, delet])
@@ -122,11 +132,29 @@ def estimatePMI(training, lodict, gp1, gp2, sounds):
 
 
 def prediction(w, aCounts, soundOccs2):
-    return ''.join([aCounts.ix[s].argmax()
+    #print(list(w))
+    # print(aCounts)
+    # for s in w:
+    #     print(s)
+    #     print(f"acl:{aCounts.loc[s]}")
+    #     print(f"idxmax:{aCounts.loc[s].idxmax()}")
+    return ''.join([aCounts.loc[s].idxmax()
                     if s in aCounts.index
-                    else soundOccs2.argmax()
+                    else soundOccs2.idxmax()
                     for s in w])
 
 
 def ldn(x, y):
     return utility.calculate_levenshtein(x, y)
+
+
+def test_baseline():
+
+    training = pd.DataFrame([["muis", "maus"], ["bot3r", "butt3r"]])
+    testing = pd.DataFrame([["muis", "maus"], ["bot3r", "butt3r"]])
+    #sounds = (list("abcdefghijklmnopqrstuvwxyz"),list("abcdefghijklmnopqrstuvwxyz"))
+    sounds = (list(set("muisbot3r")),list(set("mausbutt3r")))
+    compute_baseline("abc", "xyz", sounds, training, testing, "abcxyz.txt")
+
+if __name__ == "__main__":
+    test_baseline()
