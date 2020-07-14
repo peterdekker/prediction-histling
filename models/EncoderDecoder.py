@@ -69,15 +69,18 @@ class EncoderDecoder():
         self.l_in_X = InputLayer(shape=(self.batch_size, self.max_len[0], self.voc_size[0]))
         self.l_mask_X = InputLayer(shape=(self.batch_size, self.max_len[0]))
         self.l_target_Y = InputLayer(shape=(self.batch_size, self.max_len[1], self.voc_size[1]))
+        print(f"max_len in: {self.max_len[0]}, max_len out: {self.max_len[1]},  voc_size in: {self.voc_size[0]}, voc_size out: {self.voc_size[1]}, batch_size: {self.batch_size}, hidden: {self.n_hidden}")
         
         # Encoder-decoder
         self.l_encoder = self._create_encoder(encoder_input=self.l_in_X, mask=self.l_mask_X)
+        print(f"- Encoder total (after dense). # params: {lasagne.layers.count_params(self.l_encoder)}, shape: {lasagne.layers.get_output_shape(self.l_encoder)}")
         
         self.l_decoder = self._create_decoder(decoder_input=self.l_encoder, decoder_input_hid=self.l_encoder, max_len=self.max_len[1], n_features_context=self.n_hidden)
-        
+        print(f"- Decoder. # params: {lasagne.layers.count_params(self.l_decoder)}, shape: {lasagne.layers.get_output_shape(self.l_decoder)}")
+
         #### Reshape before dense layers
         self.l_reshape = ReshapeLayer(self.l_decoder, (self.batch_size * self.max_len[1], 2 * self.n_hidden if self.bidirectional_decoder else self.n_hidden))
-        
+        print(f"- Reshape layer. # params = decoder, shape: {lasagne.layers.get_output_shape(self.l_reshape)}")
         self.l_dense_input = self.l_reshape
         
         # Extra dense layers:
@@ -95,6 +98,7 @@ class EncoderDecoder():
         elif self.output_encoding == "character":
             output_nonlinearity = lasagne.nonlinearities.softmax
         self.l_out = DenseLayer(self.l_dense_input, num_units=self.voc_size[1], nonlinearity=output_nonlinearity)
+        print(f"- Output layer. # params: {lasagne.layers.count_params(self.l_out)}, shape: {lasagne.layers.get_output_shape(self.l_out)}")
         
         # Fetch network output
         # Deterministic (without dropout) for prediction
@@ -157,7 +161,8 @@ class EncoderDecoder():
                                     hid_init=self.init,
                                     gated_layer_type=self.gated_layer_type,
                                     resetgate=resetgate, updategate=updategate, hidden_update=hiddengate, name="enc_bw")
-        
+        print(f"- Encoder one direction. # params: {lasagne.layers.count_params(l_encoder)}, shape: {lasagne.layers.get_output_shape(l_encoder)}")
+
         if not self.encoder_only_final:
             l_encoder = self._combine_encoder_steps(l_encoder)
         
@@ -199,6 +204,7 @@ class EncoderDecoder():
             
             # Combine backward (original) and forward encoder
             l_concat = ConcatLayer([l_encoder, l_encoder_fw])
+            print(f"- Concat layer encoder. # params: {lasagne.layers.count_params(l_concat)}, shape: {lasagne.layers.get_output_shape(l_concat)}")
             
             # If no shared weight available, initialize with new weight
             if w_comb is None:
