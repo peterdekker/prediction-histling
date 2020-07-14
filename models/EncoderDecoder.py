@@ -257,24 +257,24 @@ class EncoderDecoder():
     def _compile_functions(self, X_input, Y_input, mask, error_threshold, loss, updates, pred_values_determ, context_vector):
         if Y_input == None:  # for proto-languages
             train_func = theano.function([X_input, mask, error_threshold, self.lr_var],
-                                    [loss[0], loss[1], loss[2]], updates=updates, on_unused_input="warn")
+                                    [loss[0], loss[1], loss[2]], updates=updates, on_unused_input="warn", allow_input_downcast=True)
             loss_func = theano.function(
                                     [X_input, mask, error_threshold],
-                                    [loss[0], loss[1], loss[2], loss[3], pred_values_determ], on_unused_input="warn")
+                                    [loss[0], loss[1], loss[2], loss[3], pred_values_determ], on_unused_input="warn", allow_input_downcast=True)
         else:
             train_func = theano.function([X_input, Y_input, mask, error_threshold, self.lr_var],
-                                    [loss[0], loss[1], loss[2]], updates=updates, on_unused_input="warn")
+                                    [loss[0], loss[1], loss[2]], updates=updates, on_unused_input="warn", allow_input_downcast=True)
             loss_func = theano.function(
                                     [X_input, Y_input, mask, error_threshold],
-                                    [loss[0], loss[1], loss[2], loss[3], pred_values_determ], on_unused_input="warn")
+                                    [loss[0], loss[1], loss[2], loss[3], pred_values_determ], on_unused_input="warn", allow_input_downcast=True)
         predict_func = theano.function(
                                 [X_input, mask],
-                                pred_values_determ, on_unused_input="warn")
+                                pred_values_determ, on_unused_input="warn", allow_input_downcast=True)
         vector_func = None
         if self.export_weights:
             vector_func = theano.function(
                                     [X_input, mask],
-                                    context_vector, on_unused_input="warn")
+                                    context_vector, on_unused_input="warn", allow_input_downcast=True)
         return train_func, loss_func, predict_func, vector_func
     
     def _create_loss(self, output_layer, predicted, target, error_threshold, proto_loss_multiplier=1.0):
