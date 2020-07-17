@@ -117,9 +117,14 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options, cogn
     conversion_key = {}
     features = [pd.DataFrame(), pd.DataFrame()]
 
-    # Max_len saved per language, rather than per language pair
+    # Max_len saved per language
     max_len = {}
-    voc_size = {}
+    # Voc size is different for input and output encoding
+    # (so depending on whether a language is input or output language)
+    # So nested dict, where encoding is saved
+    voc_size = defaultdict(dict)
+    i_enc = config["input_encoding"]
+    o_enc = config["output_encoding"]
 
     for lang_pair in lang_pairs:
         lang_a, lang_b = lang_pair
@@ -139,20 +144,25 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options, cogn
             with open(data_pickle, "rb") as f:
                 print("Loading train/val/test sets from pickle, nothing generated...")
                 (train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair], max_len[lang_a],
-                 max_len[lang_b], voc_size[lang_a], voc_size[lang_b]) = pickle.load(f)
+                 max_len[lang_b], voc_size[i_enc][lang_a], voc_size[o_enc][lang_b]) = pickle.load(f)
         else:
             print("Creating feature matrix for this specific language pair...")
-            features, max_len[lang_a], max_len[lang_b], voc_size[lang_a], voc_size[lang_b] = get_corpus_info(
-                [output_path_cognates_train, output_path_cognates_valtest], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], config=config, feature_matrix_phon=feature_matrix_phon)
+            features, max_len[lang_a], max_len[lang_b], voc_size[i_enc][lang_a], voc_size[o_enc][lang_b] = get_corpus_info(
+                [output_path_cognates_train, output_path_cognates_valtest], lang_pair=lang_pair, input_encoding=config["input_encoding"], output_encoding=config["output_encoding"], config=config, 
+                feature_matrix_phon=feature_matrix_phon)
             conversion_key[lang_pair] = create_conversion_key(features)
 
             print("Converting training corpus TSV file to data matrix...")
-            dataset_train, train_mean, train_std = create_data_matrix(tsv_path=output_path_cognates_train, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_a], max_len[lang_b]), batch_size=config[
-                                                                      "batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], excluded_concepts=excluded_concepts_training, cognate_detection=cognate_detection)
+            dataset_train, train_mean, train_std = create_data_matrix(tsv_path=output_path_cognates_train, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_a], max_len[lang_b]), 
+                                                                        voc_size=voc_size,
+                                                                        batch_size=config["batch_size"], config=config, mean_subtraction=config["mean_subtraction"],
+                                                                        feature_standardization=not config["no_standardization"], excluded_concepts=excluded_concepts_training, cognate_detection=cognate_detection)
 
             print("Converting val/test corpus TSV file to data matrix...")
-            dataset_valtest, _, _ = create_data_matrix(tsv_path=output_path_cognates_valtest, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), batch_size=config[
-                                                       "batch_size"], mean_subtraction=config["mean_subtraction"], feature_standardization=not config["no_standardization"], cognate_detection=cognate_detection, valtest=True, train_mean=train_mean, train_std=train_std)
+            dataset_valtest, _, _ = create_data_matrix(tsv_path=output_path_cognates_valtest, lang_pair=(lang_a, lang_b), features=features, max_len=(max_len[lang_pair[0]], max_len[lang_pair[1]]), 
+                                                            voc_size=voc_size,
+                                                            batch_size=config["batch_size"], config=config, mean_subtraction=config["mean_subtraction"],
+                                                             feature_standardization=not config["no_standardization"], cognate_detection=cognate_detection, valtest=True, train_mean=train_mean, train_std=train_std)
 
             t_set_size = dataset_train.get_size()
             vt_set_size = dataset_valtest.get_size()
@@ -186,7 +196,8 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options, cogn
             # Pickle train/val/test/sets
             with open(data_pickle, "wb") as f:
                 pickle.dump((train[lang_pair], val[lang_pair], test[lang_pair], conversion_key[lang_pair],
-                             max_len[lang_pair[0]], max_len[lang_pair[1]], voc_size[lang_a], voc_size[lang_b]), f)
+                             max_len[lang_pair[0]], max_len[lang_pair[1]], 
+                             voc_size[i_enc][lang_a], voc_size[o_enc][lang_b]), f)
     print("Done loading data.")
     return (results_path, output_path_cognates_train, output_path_cognates_valtest, context_vectors_path, subs_sp_path, subs_st_path, lang_pairs,
             train, val, test, max_len, conversion_key, voc_size, feature_matrix_phon)
@@ -358,8 +369,7 @@ def find_nearest_token(encoded_token, conversion_key):
 
 # Encode word in one-hot encoding, all words have same max length
 # Returns: (max_length, voc_size)
-def encode_word(word_tokens, features, max_length):
-    voc_size = features.shape[1]
+def encode_word(word_tokens, features, max_length, voc_size):
     encoded_word = np.zeros((max_length, voc_size))
 
     tokens = word_tokens.split(" ")
@@ -388,7 +398,6 @@ def _fill_word(word_tokens, max_length):
 def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, config, feature_matrix_phon=None):
     tokens_list_corpora = []
     max_len_corpora = []
-    voc_size_corpora = []
 
     for tsv_path in paths_list:
         # Read in TSV file
@@ -396,7 +405,6 @@ def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, conf
 
         # Get tokens set and word length for both languages
         tokens_list = [[], []]
-        voc_size = [0, 0]
         max_len = [0, 0]
         for ix in [0, 1]:
             lang = lang_pair[ix]
@@ -411,11 +419,9 @@ def get_corpus_info(paths_list, lang_pair, input_encoding, output_encoding, conf
                 tokens_set.update(split_word)
             tokens_list[ix] = list(tokens_set)
             tokens_list[ix].append(".")
-            voc_size[ix] = len(tokens_list[ix])
 
         # Save values for different corpora in lists
         tokens_list_corpora.append(tokens_list)
-        voc_size_corpora.append(voc_size)
         max_len_corpora.append(max_len)
 
     # Now combine the values from the different corpora
@@ -513,9 +519,13 @@ def create_embedding(lang, tsv_paths_list, config):
     return df
 
 
-def create_data_matrix(tsv_path, lang_pair, features, max_len, batch_size, fixed_length_x=None,
+def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_size, config, fixed_length_x=None,
                        fixed_length_y=None, mean_subtraction=False, feature_standardization=False, excluded_concepts=[],
                        only_cognates=False, cognate_detection=False, valtest=False, train_mean=None, train_std=None):
+
+    lang_a, lang_b = lang_pair
+    i_enc = config["input_encoding"]
+    o_enc = config["output_encoding"]
 
     # Read in TSV file
     df = pd.read_csv(tsv_path, sep="\t", engine="python", skipfooter=3, index_col=False)
@@ -541,8 +551,8 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, batch_size, fixed
         if concept in excluded_concepts:
             continue
         concept_entries = df[df["CONCEPT"] == concept]
-        lang0_entries = concept_entries[concept_entries["DOCULECT"] == lang_pair[0]]
-        lang1_entries = concept_entries[concept_entries["DOCULECT"] == lang_pair[1]]
+        lang0_entries = concept_entries[concept_entries["DOCULECT"] == lang_a]
+        lang1_entries = concept_entries[concept_entries["DOCULECT"] == lang_b]
         if len(lang0_entries) == 0 or len(lang1_entries) == 0:
             # Concept not available for one of the languages in langpair, skip.
             continue
@@ -558,13 +568,13 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, batch_size, fixed
                 datafile_ids.append((x_id, y_id))
                 # Encode words, for use in RNN data matrix
                 # (max_len, voc_size)
-                word_encoded_x, word_mask_x = encode_word(x, features[0], max_len[0])
-                word_encoded_y, _ = encode_word(y, features[1], max_len[1])
+                word_encoded_x, word_mask_x = encode_word(x, features[0], max_len[0], voc_size[i_enc][lang_a])
+                word_encoded_y, _ = encode_word(y, features[1], max_len[1], voc_size[o_enc][lang_b])
                 # Encode unbounded words (max len of word pair is max of words in pair),
                 # for use in SeqModel data matrix.
                 max_len_pair = np.maximum(len(x), len(y))
                 # X for SeqModel is encoded
-                word_encoded_x_unbounded, _ = encode_word(x, features[0], max_len_pair)
+                word_encoded_x_unbounded, _ = encode_word(x, features[0], max_len_pair, voc_size[i_enc][lang_a])
                 # Y for SeqModel is not encoded, just filled to maxlen
                 word_encoded_y_unbounded = _fill_word(y, max_len_pair)
                 # Keep track of word lengths, needed for SeqModel algorithm
@@ -602,8 +612,8 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, batch_size, fixed
 
     # SeqModel matrices: convert to NP array, to enable fancy indexing
     # Row lengths are uneven, because of uneven word lengths
-    matrix_x_unbounded = np.array(matrix_x_unbounded)
-    matrix_y_unbounded = np.array(matrix_y_unbounded)
+    matrix_x_unbounded = np.array(matrix_x_unbounded, dtype=object)
+    matrix_y_unbounded = np.array(matrix_y_unbounded, dtype=object)
     word_lengths_unbounded = np.array(word_lengths_unbounded)
 
     # Feature standardization
@@ -752,15 +762,3 @@ def compute_n_cognates(lang_pairs, input_file, langs, cognates_threshold, config
         for cl in cliques_labels:
             f.write(" ".join(cl) + "\n")
     return count_df, cliques_labels
-
-# ~ def generate_random_Y(shape):
-    # ~ # Random Y: set one random position of every one-hot-array to 1
-    # ~ Y = np.zeros(shape)
-    # ~ n_examples = Y.shape[0]
-    # ~ word_length = Y.shape[1]
-    # ~ voc_size = Y.shape[2]
-    # ~ for ex in np.arange(n_examples):
-    # ~ for t in np.arange(word_length):
-    # ~ i = random.randint(0,voc_size-1)
-    # ~ Y[ex][t][i] = 1
-    # ~ return Y

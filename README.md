@@ -8,9 +8,9 @@ Any questions or problems?
 ## Installation
 ### Linux/Mac
 
-* This Jupyter notebook depends on Python 3, pip (PyPi) and venv. Please first install Python 3, pip and development hearders for libxml2, libz and libopenblas via your package management system. For GPU support, also install pygpuE.g. for Ubuntu:
+* This Jupyter notebook depends on Python 3, pip (PyPi) and venv. Please first install Python 3, pip and development hearders for libxml2, libz and libopenblas via your package management system. For GPU support, also install pygpu and headers for libgpuarray. E.g. for Ubuntu:
  ```
- sudo apt install python3-pip libxml2-dev libopenblas-dev libz-dev python3-pygpu
+ sudo apt install python3-pip libxml2-dev libopenblas-dev libz-dev python3-pygpu libgpuarray-dev
  ```
 
 * Install the Python dependencies systemwide, using the `pip3` package manager as root. First install a number of packages separately:
