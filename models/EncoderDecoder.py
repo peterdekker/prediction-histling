@@ -106,7 +106,9 @@ class EncoderDecoder():
         self.predicted_values_deterministic = lasagne.layers.get_output(self.l_out, deterministic=True)
         self.context_vector = lasagne.layers.get_output(self.l_encoder, deterministic=True)
         # Do reshape on target values (actually build small network), and get output
-        self.target_values = lasagne.layers.get_output(ReshapeLayer(self.l_target_Y, (self.batch_size * self.max_len[1], self.voc_size[1])))
+        target_reshape = ReshapeLayer(self.l_target_Y, (self.batch_size * self.max_len[1], self.voc_size[1]))
+        print(f"- Target reshape layer. shape: {lasagne.layers.get_output_shape(target_reshape)}")
+        self.target_values = lasagne.layers.get_output(target_reshape)
         
         # Array storing the prediction errors, initialized with 10 as first error
         self.prediction_errors = [10]
@@ -220,7 +222,9 @@ class EncoderDecoder():
         for _ in np.arange(max_len - 1):
             decoder_input = ConcatLayer([decoder_input, decoder_input_orig])
         
+        print(f"- Decoder input before reshape. shape: {lasagne.layers.get_output_shape(decoder_input)}")
         decoder_input = ReshapeLayer(decoder_input, (self.batch_size, n_features_context, max_len), name="reshape_enc_dec")
+        print(f"- Decoder input after reshape. shape: {lasagne.layers.get_output_shape(decoder_input)}")
         decoder_input = DimshuffleLayer(decoder_input, (0, 2, 1), name="dimshuf_enc_dec")
         
         # Use standard gates, if no weight sharing gates are supplied
@@ -263,24 +267,24 @@ class EncoderDecoder():
     def _compile_functions(self, X_input, Y_input, mask, error_threshold, loss, updates, pred_values_determ, context_vector):
         if Y_input == None:  # for proto-languages
             train_func = theano.function([X_input, mask, error_threshold, self.lr_var],
-                                    [loss[0], loss[1], loss[2]], updates=updates, on_unused_input="warn")
+                                    [loss[0], loss[1], loss[2]], updates=updates, on_unused_input="warn", allow_input_downcast=True)
             loss_func = theano.function(
                                     [X_input, mask, error_threshold],
-                                    [loss[0], loss[1], loss[2], loss[3], pred_values_determ], on_unused_input="warn")
+                                    [loss[0], loss[1], loss[2], loss[3], pred_values_determ], on_unused_input="warn", allow_input_downcast=True)
         else:
             train_func = theano.function([X_input, Y_input, mask, error_threshold, self.lr_var],
-                                    [loss[0], loss[1], loss[2]], updates=updates, on_unused_input="warn")
+                                    [loss[0], loss[1], loss[2]], updates=updates, on_unused_input="warn", allow_input_downcast=True)
             loss_func = theano.function(
                                     [X_input, Y_input, mask, error_threshold],
-                                    [loss[0], loss[1], loss[2], loss[3], pred_values_determ], on_unused_input="warn")
+                                    [loss[0], loss[1], loss[2], loss[3], pred_values_determ], on_unused_input="warn", allow_input_downcast=True)
         predict_func = theano.function(
                                 [X_input, mask],
-                                pred_values_determ, on_unused_input="warn")
+                                pred_values_determ, on_unused_input="warn", allow_input_downcast=True)
         vector_func = None
         if self.export_weights:
             vector_func = theano.function(
                                     [X_input, mask],
-                                    context_vector, on_unused_input="warn")
+                                    context_vector, on_unused_input="warn", allow_input_downcast=True)
         return train_func, loss_func, predict_func, vector_func
     
     def _create_loss(self, output_layer, predicted, target, error_threshold, proto_loss_multiplier=1.0):
