@@ -38,6 +38,8 @@ def show_output_substitutions(results_path, subs_st_path, subs_sp_path, lang1, l
     source_predicted_subs = defaultdict(int)
     df = pd.read_csv(results_path + ".tsv", sep="\t")
     for _, row in df.iterrows():
+        if not isinstance(row["PREDICTION"],str):
+            continue
         source_tokens = row["INPUT"].split()
         target_tokens = row["TARGET"].split()
         predicted_tokens = row["PREDICTION"].split()
