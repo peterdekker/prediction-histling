@@ -61,3 +61,5 @@ Every time you would like to run the notebook, invoke our run script:
  ```
  * A browser window will open. Now, click the notebook: `Word prediction in computational historical linguistics.ipynb`. The first time you use it, pick the kernel `ph-env` from menu `Kernel > Change kernel > env`.
 
+ Thanks to Mathieu Fannee for describing the steps of running Python virtual environments on Windows.
+
