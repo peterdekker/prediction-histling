@@ -10,4 +10,5 @@ langs_cliques_100.txt
 n_cognates.tsv
 data-backup/
 output-backup/
-clts
+clts*
+ph-env/
