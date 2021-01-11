@@ -18,7 +18,7 @@ OPTIMIZER = "adagrad"  # choices=["adagrad", "adam", "sgd"]
 # All gradients above this will be clipped
 GRAD_CLIP = 100
 # Number of epochs to train the net
-N_EPOCHS = 3
+N_EPOCHS = 15
 GATED_LAYER_TYPE = "gru"  # ["lstm", "gru"]
 N_LAYERS_DENSE = 1
 N_ITER_SEQ = 100
