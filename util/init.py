@@ -44,6 +44,6 @@ def initialize_program(cognate_detection, config):
     baselines_path = utility.get_baselines_path(config["results_dir"], options)
 
     # Download CLTS
-    download_if_needed (config["clts_path"], config["clts_url"], "CLTS")
+    download_if_needed(config["clts_path"], config["clts_url"], "CLTS")
 
     return options, distances_path, baselines_path

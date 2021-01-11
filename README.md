@@ -8,49 +8,56 @@ Any questions or problems?
 ## Installation
 ### Linux/Mac
 
-* This Jupyter notebook depends on Python 3, pip (PyPi) and venv. Please first install Python 3, pip and development hearders for libxml2, libz and libopenblas via your package management system. For GPU support, also install pygpu and headers for libgpuarray. E.g. for Ubuntu:
+* Please first install Python 3, pip, Python venv and development hearders for libxml2, libz and libopenblas via your package management system. For GPU support, also install pygpu and headers for libgpuarray. E.g. for Ubuntu:
  ```
- sudo apt install python3-pip libxml2-dev libopenblas-dev libz-dev python3-pygpu libgpuarray-dev
+ sudo apt install python3-pip python3-venv libxml2-dev libopenblas-dev libz-dev python3-pygpu libgpuarray-dev
  ```
-
-* Install the Python dependencies systemwide, using the `pip3` package manager as root. First install a number of packages separately:
-```
-sudo pip3 install wheel cython numpy
-sudo pip3 install -r requirements.txt
-```
-
-* Every time you want to run the notebook, change to the prediction-histling directory (the directory where this README is located), and run the Jupyter notebook as a normal user:
+* Open a terminal and move to the directory where this README is located.
+* Now, run the install script, as a normal user (without `sudo`):
    ```
-   cd PATH/TO/PREDICTION-HISTLING
-   jupyter notebook
+   ./install.sh
    ```
-   A browser window will open. Now, click `Word prediction in historical linguistics.ipynb`.
+   If permission is denied, issue the following command once:
+   ```
+   sudo chmod +x install.sh
+   ```
+   and then run the install script.
+
+ * Every time you want to run the notebook, run the `run.sh` script as a normal user (without `sudo`):
+   ```
+   ./run.sh
+   ```
+   A browser window will open. Now, click the notebook: `Word prediction in computational historical linguistics.ipynb`. The first time you use it, pick the kernel `ph-env` from menu `Kernel > Change kernel > env`.
+
 
 ### Windows (experimental)
 Running this notebook on Windows is not fully tested. If you run into any problems, [file an issue](https://github.com/peterdekker/prediction-histling/issues).
 
-* Open a command prompt (Windows key + R, then issue "cmd").
-* Change to the prediction-histling directory (the directory where this README is located):
+ * Open a command prompt (Windows key + R, then issue "cmd").
+ * Change the directory where this README is located:
  ```
- cd PATH\TO\PREDICTION-HISTLING
+ cd PREDICTION-HISTLING\DIRECTORY
  ```
-* If you don't have Python yet, install it now:
+ * If you don't have Python yet, install it now:
  ```
  python_install.bat
  ```
-* Close the command prompt after this (required!)
+ * Close the command prompt after this (required!)
 
+Now we're ready to install our notebook:
+ * Open a command prompt (again: Windows key + R, then type "cmd").
+ * Change to the directory where this README is located: 
+ * Invoke the install script:
+ ```
+ install.bat
+ ```
 
-* Install the Python dependencies using the `pip` package manager. First install a number of packages separately:
-```
-pip install wheel cython numpy
-pip install -r requirements.txt
-```
-
-* Every time you want to run the notebook, change to prediction-histling directory, and run the Jupyter notebook as a normal user:
-   ```
-   cd PATH\TO\PREDICTION-HISTLING
-   jupyter notebook
-   ```
-   A browser window will open. Now, click `Word prediction in historical linguistics.ipynb`.
+Every time you would like to run the notebook, invoke our run script:
+ * Open a command prompt (Windows key + R, then issue `cmd`).
+ * Change to the directory
+ * Invoke the run script:
+ ```
+ run.bat
+ ```
+ * A browser window will open. Now, click the notebook: `Word prediction in computational historical linguistics.ipynb`. The first time you use it, pick the kernel `ph-env` from menu `Kernel > Change kernel > env`.
 

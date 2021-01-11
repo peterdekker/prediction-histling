@@ -18,7 +18,7 @@ OPTIMIZER = "adagrad"  # choices=["adagrad", "adam", "sgd"]
 # All gradients above this will be clipped
 GRAD_CLIP = 100
 # Number of epochs to train the net
-N_EPOCHS = 15
+N_EPOCHS = 3
 GATED_LAYER_TYPE = "gru"  # ["lstm", "gru"]
 N_LAYERS_DENSE = 1
 N_ITER_SEQ = 100
@@ -37,7 +37,6 @@ FILTER_TRAIN = 1.0
 EXPORT_WEIGHTS = False
 # TRAIN_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
 # VALTEST_CORPUS = "northeuralex" # ["northeuralex", "ielex", "ielex-corr"]
-TRAIN_PROTO = False
 VIEW_EMBEDDING_IPA = True
 
 # ## Other arguments
@@ -97,7 +96,6 @@ config = {
     "export_weights": EXPORT_WEIGHTS,
     # "train_corpus": TRAIN_CORPUS,
     # "valtest_corpus": VALTEST_CORPUS,
-    "train_proto": TRAIN_PROTO,
     "results_dir": RESULTS_DIR,
     "feature_file": FEATURE_FILE,
     "sample_lang_pairs": SAMPLE_LANG_PAIRS,

@@ -95,7 +95,7 @@ def get_baselines_path(output_dir, options):
 def create_option_string(config, cognate_detection):
     filename = ""
     # All modes except are excluded from option string
-    omit = ["prediction", "cluster", "visualize", "visualize_weights", "baseline", "baseline_cluster", "tune_cd", "tune_source_cd", "show_n_cog", "export_weights", "input_type", "grad_clip", "layers_encoder", "layers_decoder", "layers_dense", "adaptive_lr"]
+    omit = ["prediction", "cluster", "visualize", "visualize_weights", "baseline", "baseline_cluster", "tune_cd", "tune_source_cd", "show_n_cog", "export_weights", "input_type", "grad_clip", "layers_encoder", "layers_decoder", "layers_dense", "adaptive_lr", "clts_path", "clts_url"]
     # Cognate detection is also added to filename, becauuse
     # CD result files have to be identified (they are different, also non-cognates)
     config["cognate_detection"] = cognate_detection
@@ -103,12 +103,13 @@ def create_option_string(config, cognate_detection):
     #if not config["phyl"]:
     #    omit.append("languages")
     for key, value in sorted(config.items()):
+        if key in omit:
+            continue
         # Use only first letter of every word part
         key_short = shorten(key)
         if isinstance(value, bool):
             if value:  # If True
-                if key not in omit:
-                    filename += key_short + "."
+                filename += key_short + "."
         elif isinstance(value, str):
             # The dataset values can be paths, we only want the last part
             if '/' in value:

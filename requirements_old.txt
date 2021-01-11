@@ -1,0 +1,23 @@
+wheel
+cython
+numpy
+scipy
+matplotlib
+pandas>=0.17.0
+distance
+lingpy
+seqlearn
+bcubed
+python-igraph
+newick
+sklearn
+distance
+jupyter
+ipykernel
+requests
+ete3
+pyclts
+six
+PyQt5 # does not work in virtualenv for some reason
+https://github.com/Theano/Theano/archive/master.zip
+https://github.com/Lasagne/Lasagne/archive/master.zip

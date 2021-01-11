@@ -132,7 +132,7 @@ def cluster_hierarchical(output_path, matrix, species_names, cluster_alg, cluste
             node.add_face(name_face, column=0, position='branch-right')
             
     # Output to pdf and nw
-    filename_base = output_path + "_" + "_".join(cluster_alg_label.split())
+    filename_base = output_path + "".join([w[0] for w in cluster_alg_label.split()])
     tree.render(f"{filename_base}.pdf", tree_style=config["ete_tree_style"])
     tree.write(format=0, outfile=f"{filename_base}.nw")
     return tree

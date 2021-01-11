@@ -14,4 +14,3 @@ pip3 install -r requirements.txt
 rm -rf ~/.local/share/jupyter/kernels/ph-env
 # Kernel is configured to work with the virtual environment
 python3 -m ipykernel install --user --name ph-env
-# Copy .theanorc file, so gpu is used?

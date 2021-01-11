@@ -19,7 +19,6 @@ from collections import defaultdict
 from itertools import permutations, chain
 from lingpy import LexStat
 from lingpy.algorithm.clustering import flat_upgma, fuzzy, link_clustering, mcl
-from lingpy.algorithm.extra import affinity_propagation, infomap_clustering
 import numpy as np
 import os
 import pandas as pd

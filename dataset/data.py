@@ -112,7 +112,7 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options, cogn
     for lang_pair in lang_pairs:
         lang_a, lang_b = lang_pair
         context_vectors_path[lang_pair] = utility.create_path(
-            config["results_dir"], options, prefix="context_", lang_a=lang_a, lang_b=lang_b)
+            config["results_dir"], options, prefix="cxt_", lang_a=lang_a, lang_b=lang_b)
         # Create export path, containing all options
         # This is used to output a prediction results file, which can then be used for visualization and cognate detection
         results_path[lang_pair] = utility.get_results_path(lang_a, lang_b, config["results_dir"], options)
