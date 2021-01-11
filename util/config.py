@@ -60,7 +60,7 @@ ETE_TREE_STYLE.show_border = False
 ETE_TREE_STYLE.margin_top = ETE_TREE_STYLE.margin_bottom = ETE_TREE_STYLE.margin_right = ETE_TREE_STYLE.margin_left = 5
 
 ETE_NODE_STYLE = NodeStyle()
-ETE_NODE_STYLE["size"] = 0  # remove ugly balls from leaves
+ETE_NODE_STYLE["size"] = 0  # remove balls from leaves
 
 config = {
     "n_hidden": N_HIDDEN,
