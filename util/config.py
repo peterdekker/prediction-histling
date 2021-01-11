@@ -45,11 +45,14 @@ RESULTS_DIR = "output"
 FEATURE_FILE = "data/asjp_phonetic_features_new.tsv"
 SAMPLE_LANG_PAIRS = None
 
-DATA_PATH = {"northeuralex": "data/northeuralex-cldf.csv",
+DATA_PATH = {"northeuralex": "data/northeuralex-cldf-20210111-fix-pd.tsv",
              "ielex": "data/ielex-4-26-2016.csv"}
 
 DATA_URL = {"northeuralex": "http://www.sfs.uni-tuebingen.de/~jdellert/northeuralex/0.9/northeuralex-0.9-forms.tsv",
             "ielex": "TEST"}
+
+CLTS_PATH = "v1.4.1.tar.gz"
+CLTS_URL = "https://github.com/cldf-clts/clts/archive/v1.4.1.tar.gz"
             
 # Define tree style
 ETE_TREE_STYLE = TreeStyle()
@@ -102,7 +105,9 @@ config = {
     "data_path": DATA_PATH,
     "ete_tree_style": ETE_TREE_STYLE,
     "ete_node_style": ETE_NODE_STYLE,
-    "view_embedding_ipa": VIEW_EMBEDDING_IPA
+    "view_embedding_ipa": VIEW_EMBEDDING_IPA,
+    "clts_path": CLTS_PATH,
+    "clts_url": CLTS_URL
 }
 
 # Set batch size to 1 for weight visualization:

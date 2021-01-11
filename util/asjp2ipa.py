@@ -25,8 +25,8 @@ parentdir = os.path.dirname(currentdir)
 
 from pyclts import CLTS
 
-# Use CLTS installation in parent directory, which is git subtree of https://github.com/cldf-clts/clts
-clts = CLTS(f"{parentdir}/clts")
+
+clts = CLTS(f"{parentdir}/clts-1.4.1")
 asjp = clts.transcriptionsystem('asjpcode')
 
 def asjp_to_ipa(word):

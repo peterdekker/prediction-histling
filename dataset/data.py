@@ -25,31 +25,14 @@ import itertools
 # from lingpy import *
 from lingpy.sequence.sound_classes import ipa2tokens
 import numpy as np
-import os
-import requests
 import pandas as pd
 from scipy.spatial.distance import euclidean
 import igraph
 import pickle
-import pathlib
+import os
 
-PROBLEM_LANGUAGES = ["IE.Indic.Bengali", "IE.Iranian.Ossetic", "IE.Iranian.Pashto"]
+from util import init
 
-
-def download_if_needed(file_path, url):
-    if not os.path.exists(file_path):
-        print(f"Downloading file {url}...")
-        # Create parent dirs
-        p = pathlib.Path(file_path)
-        p.parent.mkdir(parents=True, exist_ok=True)
-        with open(file_path, 'wb') as f:
-            print(f"Downloading dataset from {url}")
-            try:
-                r = requests.get(url, allow_redirects=True)
-            except requests.exceptions.RequestException as e:  # This is the correct syntax
-                raise SystemExit(e)
-            # Write downloaded content to file
-            f.write(r.content)
 
 
 def load_data(train_corpus, valtest_corpus, languages, input_type, options, cognate_detection, config):
@@ -59,7 +42,7 @@ def load_data(train_corpus, valtest_corpus, languages, input_type, options, cogn
     output_path_train = os.path.join(config["results_dir"], f"{train_corpus}-{input_type}.tsv")
     output_path_cognates_train = os.path.join(config["results_dir"], f"{train_corpus}-{input_type}-cognates.tsv")
     # Download train corpus, if needed
-    download_if_needed(input_path_train, url_train)
+    init.download_if_needed(input_path_train, url_train, "corpus")
 
     if valtest_corpus != train_corpus:
         # Set variables for val/test corpus
