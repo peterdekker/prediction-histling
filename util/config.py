@@ -44,7 +44,7 @@ RESULTS_DIR = "output"
 FEATURE_FILE = "data/asjp_phonetic_features_new.tsv"
 SAMPLE_LANG_PAIRS = None
 
-DATA_PATH = {"northeuralex": "data/northeuralex-cldf.tsv",
+DATA_PATH = {"northeuralex": "data/northeuralex-cldf-20210111-fix-pd.tsv",
              "ielex": "data/ielex-4-26-2016.csv"}
 
 DATA_URL = {"northeuralex": "http://www.sfs.uni-tuebingen.de/~jdellert/northeuralex/0.9/northeuralex-0.9-forms.tsv",
