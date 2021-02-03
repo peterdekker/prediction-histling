@@ -610,7 +610,6 @@ def create_data_matrix(tsv_path, lang_pair, features, max_len, voc_size, batch_s
             matrix_x, train_mean_calc, train_std_calc = standardize(matrix_x_unnormalized)
         # During valtest: standardize using mean and std from train set
         if valtest:
-            print("USE TRAIN M/S")
             matrix_x, _, _ = standardize(matrix_x_unnormalized, valtest=True,
                                          train_mean=train_mean, train_std=train_std)
     return Dataset(batch_size, matrix_x, matrix_x_unnormalized, matrix_y, mask_x, max_len[0], max_len[1], matrix_x_unbounded, matrix_y_unbounded, tsv_path, datafile_ids, word_lengths_unbounded), train_mean_calc, train_std_calc
