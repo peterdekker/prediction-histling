@@ -1,5 +1,5 @@
 # Word Prediction in Computational Historical Linguistics
-This is a Jupyter notebook and Python library to demonstrate the use of word prediction using deep learning as an aid in historical linguistics. This notebook accompanies the following paper: [https://doi.org/10.15398/jlm.v8i2.268](Dekker, P., & Zuidema, W. (2021). Word Prediction in Computational Historical Linguistics. Journal of Language Modelling, 8(2), 295–336.) The results yielded by this demonstrational notebook may differ somewhat from the results in the article.
+This is a Jupyter notebook and Python library to demonstrate the use of word prediction using deep learning as an aid in historical linguistics. This notebook accompanies the following paper: [Dekker, P., & Zuidema, W. (2021). Word Prediction in Computational Historical Linguistics. Journal of Language Modelling, 8(2), 295–336.](https://doi.org/10.15398/jlm.v8i2.268) The results yielded by this demonstrational notebook may differ somewhat from the results in the article.
 
 Any questions or problems?
  * [File a bug report](https://github.com/peterdekker/prediction-histling/issues)
