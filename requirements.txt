@@ -42,7 +42,7 @@ latexcodec==2.0.1
 lingpy==2.6.6
 MarkupSafe==1.1.1
 matplotlib==3.3.3
-mistune==0.8.4
+mistune==2.0.3
 mock==4.0.3
 nbclient==0.5.1
 nbconvert==6.0.7
